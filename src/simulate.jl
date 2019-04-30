@@ -3,26 +3,38 @@
 # functions to simulate micro grid control
 
 
-function load_sites(path_to_csv::String)
+function simulate_site(site::Site, args::Dict{String,Any})
 
-	sites = Site[]
-	header = Dict()
+	test_data = load_data(site.id, args["test"])
+	periods = unique(test_data[:period_id])
 
-	open(path_to_csv, "r") do file
-		for (i, line) in enumerate(eachline(file))
+	for period_id in periods
 
-			line = split(line, ",")
+		test_data_period = test_data[test_data.period_id .== period_id, :]
+		period = Period(string(period_id), test_data_period)
+		simulate_period(period, site, args)
 
-			if i == 1
-				header = Dict(name=>index for (index, name) in enumerate(line))
-			else
-				site = Site(line, header)
-				push!(sites, site)
-			end
-
-		end
 	end
 
-	return sites
+	return nothing
+
+end
+
+function simulate_period(period::Period, site::Site, args::Dict{String,Any})
+
+	for battery in site.batteries
+
+		scenario = Scenario(site.id, period.id, battery, args["method"])
+		simulate_scenario(scenario, period)
+
+	end
+
+	return nothing
+
+end
+
+function simulate_scenario(scenario::Scenario, period::Period)
+
+
 
 end

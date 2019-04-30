@@ -38,7 +38,37 @@ function Site(line::Array{SubString{String}}, header::Dict{SubString{String},Int
 
 end
 
+function Site(data::DataFrame, row::Int64)
 
-struct Period
+	id = data[row, :SiteID]
+
+	batteries = Battery[]
+	number_of_batteries = Int((size(data, 2)-1) / 4)
+	battery_fields = ["Capacity", "Power", "Charge_Efficiency", "Discharge_Efficiency"]
+
+	for battery_id in 1:number_of_batteries
+		args =  Float64[]
+		for field in battery_fields
+			arg = data[row, Symbol("Battery_$(battery_id)_$(field)")]
+			push!(args, parse(Float64, arg))
+		end
+		push!(batteries, Battery(string(battery_id), args...))
+	end
+
+	return Site(id, batteries)
+	
+end
+
+
+struct Period 
 	id::String
+	test_data_period::DataFrame
+end
+
+
+struct Scenario
+	site_id::String
+	period_id::String
+	battery::Battery
+	method::String
 end
