@@ -1,6 +1,13 @@
 # developed with Julia 1.0.3
 #
-# struct for micro grid simulation
+# struct for EMS simulation
+
+
+struct Paths
+	train_data::String
+	test_data::String
+	save::String
+end
 
 
 struct Battery
@@ -17,30 +24,9 @@ struct Site
 	batteries::Union{Battery, Array{Battery}}
 end
 
-function Site(line::Array{SubString{String}}, header::Dict{SubString{String},Int64})
-
-	id = line[header["SiteId"]]
-
-	batteries = Battery[]
-	number_of_batteries = Int((length(header)-1) / 4)
-	battery_fields = ["Capacity", "Power", "Charge_Efficiency", "Discharge_Efficiency"]
-
-	for battery_id in 1:number_of_batteries
-		args = Float64[]
-		for field in battery_fields
-			field = line[header["Battery_$(battery_id)_$(field)"]]
-			push!(args, parse(Float64, field))
-		end
-		push!(batteries, Battery(string(battery_id), args...))
-	end
-
-	return Site(id, batteries)
-
-end
-
 function Site(data::DataFrame, row::Int64)
 
-	id = data[row, :SiteID]
+	id = string(data[row, :SiteId])
 
 	batteries = Battery[]
 	number_of_batteries = Int((size(data, 2)-1) / 4)
@@ -50,7 +36,7 @@ function Site(data::DataFrame, row::Int64)
 		args =  Float64[]
 		for field in battery_fields
 			arg = data[row, Symbol("Battery_$(battery_id)_$(field)")]
-			push!(args, parse(Float64, arg))
+			push!(args, float(arg))
 		end
 		push!(batteries, Battery(string(battery_id), args...))
 	end
@@ -62,7 +48,8 @@ end
 
 struct Period 
 	id::String
-	test_data_period::DataFrame
+	data::DataFrame
+	site::Site
 end
 
 
@@ -70,5 +57,7 @@ struct Scenario
 	site_id::String
 	period_id::String
 	battery::Battery
-	method::String
+	data::DataFrame
+	model::AbstractModel
+	paths::Paths
 end

@@ -1,18 +1,18 @@
 # developed with Julia 1.0.3
 #
-# functions to simulate micro grid control
+# functions to simulate EMS
 
 
-function simulate_site(site::Site, args::Dict{String,Any})
+function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 
-	test_data = load_data(site.id, args["test"])
+	test_data = load_data(site.id, paths.test_data)
 	periods = unique(test_data[:period_id])
 
 	for period_id in periods
 
 		test_data_period = test_data[test_data.period_id .== period_id, :]
-		period = Period(string(period_id), test_data_period)
-		simulate_period(period, site, args)
+		period = Period(string(period_id), test_data_period, site)
+		simulate_period(period, model, paths)
 
 	end
 
@@ -20,12 +20,12 @@ function simulate_site(site::Site, args::Dict{String,Any})
 
 end
 
-function simulate_period(period::Period, site::Site, args::Dict{String,Any})
+function simulate_period(period::Period, model::AbstractModel, paths::Paths)
 
-	for battery in site.batteries
+	for battery in period.site.batteries
 
-		scenario = Scenario(site.id, period.id, battery, args["method"])
-		simulate_scenario(scenario, period)
+		scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
+		simulate_scenario(scenario) 
 
 	end
 
@@ -33,8 +33,41 @@ function simulate_period(period::Period, site::Site, args::Dict{String,Any})
 
 end
 
-function simulate_scenario(scenario::Scenario, period::Period)
+function simulate_scenario(scenario::Scenario)
 
+	value_functions = offline_step(scenario)
 
+	simulation = online_step(scenario, value_functions)
+
+	return nothing
+
+end
+
+function offline_step(scenario::Scenario)
+
+	return 0
+
+end
+
+function online_step(scenario::Scenario, value_functions)
+
+	"""
+	x = init_state()
+	horizon = size(period.data, 1)
+
+	simulation = 0 # save stuff ??
+
+	for t in 1:horizon
+
+		u = control()
+		stage_cost = cost(t, x, u, w)
+		x = dynamics(t, x, u, w)
+
+	end
+
+	return simulation
+	"""
+
+	return 0
 
 end
