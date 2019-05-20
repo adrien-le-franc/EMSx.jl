@@ -7,25 +7,30 @@ function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 
 	test_data = load_data(site.id, paths.test_data)
 	periods = unique(test_data[:period_id])
+	simulations = Simulation[]
 
 	for period_id in periods
 
 		test_data_period = test_data[test_data.period_id .== period_id, :]
-		period = Period(string(period_id), test_data_period, site)
-		simulate_period(period, model, paths)
+		period = Period(string(period_id), test_data_period, site, Simulation[])
+		simulate_period!(period, model, paths)
+		append!(simulations, period.simulations)
 
 	end
 
-	return nothing
+	save(paths.save, site.id, simulations)
+
+	return nothing 
 
 end
 
-function simulate_period(period::Period, model::AbstractModel, paths::Paths)
+function simulate_period!(period::Period, model::AbstractModel, paths::Paths)
 
 	for battery in period.site.batteries
 
 		scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
-		simulate_scenario(scenario) 
+		simulation = simulate_scenario(scenario)
+		push!(period.simulations, simulation)
 
 	end
 
@@ -39,17 +44,32 @@ function simulate_scenario(scenario::Scenario)
 
 	simulation = online_step(scenario, value_functions)
 
-	return nothing
+	return simulation
 
 end
+
+
+
+
+
+
 
 function offline_step(scenario::Scenario)
 
-	return 0
+	model = scenario.model
+
+	if ! (typeof(model) <: DynamicProgrammingModel)
+		return ValueFunctions()
+	else
+		return compute_value_function(model) ## dans StoOpt.jl 
+	end
 
 end
 
-function online_step(scenario::Scenario, value_functions)
+function online_step(scenario::Scenario, value_functions::ValueFunctions) 
+
+
+	simulation = Simulation()
 
 	"""
 	x = init_state()
@@ -68,6 +88,6 @@ function online_step(scenario::Scenario, value_functions)
 	return simulation
 	"""
 
-	return 0
+	return simulation
 
 end

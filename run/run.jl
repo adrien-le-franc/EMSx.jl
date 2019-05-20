@@ -12,11 +12,8 @@ function main()
 	check_arguments(args)
 
 	sites = load_sites(args["metadata"])
-
+	model = init_model(args["%COMMAND%"], args[args["%COMMAND%"]])
 	paths = Paths(args["train"], args["test"], args["save"])
-
-	Model = getfield(Main, Symbol(args["model"]))
-	model = Model()
 
 	for site in sites
 

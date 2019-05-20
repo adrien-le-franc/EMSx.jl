@@ -1,14 +1,14 @@
 module EMSx
 
-using ArgParse, CSV, DataFrames
-using StoOpt
+using ArgParse, CSV, DataFrames, JLD
+using StoOpt 
 
 include("struct.jl")
 include("utils.jl")
 include("simulate.jl") 
 
-export Paths, Site, Battery, Period, Scenario
+export Paths, Site, Battery, Period, Scenario, Simulation
 export parse_commandline, check_arguments, load_sites, load_data
-export simulate_site, simulate_period, simulate_scenario
+export simulate_site, simulate_period!, simulate_scenario
 
-end
+end 
