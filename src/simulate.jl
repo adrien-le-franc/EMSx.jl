@@ -59,14 +59,14 @@ function offline_step(scenario::Scenario)
 	model = scenario.model
 
 	if ! (typeof(model) <: DynamicProgrammingModel)
-		return ValueFunctions()
+		return nothing
 	else
 		return compute_value_function(model) ## dans StoOpt.jl 
 	end
 
 end
 
-function online_step(scenario::Scenario, value_functions::ValueFunctions) 
+function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,Nothing}) 
 
 
 	simulation = Simulation()
