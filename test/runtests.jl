@@ -1,4 +1,4 @@
-# developed with Julia 1.0.3
+# developed with Julia 1.1.1
 #
 # tests for EMSx package
 

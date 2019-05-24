@@ -22,7 +22,7 @@ struct Id
 	site_id::String
 	perdio_id::String
 	battery_id::String
-	model::AbstractModel
+	model_name::String
 end
 
 
@@ -31,7 +31,7 @@ struct Simulation
 	id::Id
 end
 
-Simulation() = Simulation(Result(zeros(1), zeros(1)), Id("", "", "", SDP()))
+Simulation() = Simulation(Result(zeros(1), zeros(1)), Id("", "", "", ""))
 Base.:(==)(s1::Simulation, s2::Simulation) = (s1.result == s2.result && s1.id == s2.id)
 
 
@@ -79,7 +79,7 @@ mutable struct Period
 end
 
 
-struct Scenario # restructurer avec ID... ??
+mutable struct Scenario # restructurer avec ID... ??
 	site_id::String
 	period_id::String
 	battery::Battery

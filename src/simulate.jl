@@ -1,4 +1,4 @@
-# developed with Julia 1.0.3
+# developed with Julia 1.1.1
 #
 # functions to simulate EMS
 
@@ -6,6 +6,7 @@
 function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 
 	test_data = load_data(site.id, paths.test_data)
+	load_train_data!(site, model, paths)
 	periods = unique(test_data[:period_id])
 	simulations = Simulation[]
 
@@ -28,6 +29,7 @@ function simulate_period!(period::Period, model::AbstractModel, paths::Paths)
 
 	for battery in period.site.batteries
 
+		update_model!(model, battery, period.data)
 		scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
 		simulation = simulate_scenario(scenario)
 		push!(period.simulations, simulation)
@@ -41,18 +43,11 @@ end
 function simulate_scenario(scenario::Scenario)
 
 	value_functions = offline_step(scenario)
-
 	simulation = online_step(scenario, value_functions)
 
 	return simulation
 
 end
-
-
-
-
-
-
 
 function offline_step(scenario::Scenario)
 
@@ -61,7 +56,7 @@ function offline_step(scenario::Scenario)
 	if ! (typeof(model) <: DynamicProgrammingModel)
 		return nothing
 	else
-		return compute_value_function(model) ## dans StoOpt.jl 
+		return compute_value_function(model, cost, dynamics)
 	end
 
 end
@@ -69,24 +64,29 @@ end
 function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,Nothing}) 
 
 
-	simulation = Simulation()
-
-	"""
-	x = init_state()
-	horizon = size(period.data, 1)
-
-	simulation = 0 # save stuff ??
+	state_of_charge = init_state(scenario.model)
+	horizon = size(scenario.data, 1)
 
 	for t in 1:horizon
 
-		u = control()
-		stage_cost = cost(t, x, u, w)
-		x = dynamics(t, x, u, w)
+		control = compute_control(scenario.model, cost, dynamics, state_of_charge, t, 
+			value_functions)
+
+		load = scenario.data[:actual_load][t]
+		pv = scenario.data[:actual_pv][t]
+		noise = [load-pv]
+
+		stage_cost = cost(scenario.model, t, state_of_charge, control, noise)
+		state_of_charge = dynamics(scenario.model, t, state_of_charge, control, noise)
+
+		# save (function ?)
 
 	end
 
-	return simulation
-	"""
+
+
+	simulation = Simulation()
+
 
 	return simulation
 
