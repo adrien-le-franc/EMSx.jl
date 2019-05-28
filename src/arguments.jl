@@ -75,6 +75,3 @@ function check_arguments(args::Dict{String,Any})
     # command ? one ? single ?
 	
 end
-
-args = parse_commandline()
-println(args[args["%COMMAND%"]])

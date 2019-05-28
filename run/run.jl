@@ -1,10 +1,9 @@
-# developed with Julia 1.0.3
+# developed with Julia 1.1.1
 #
 # simulation script for micro grid control
 
 
 using EMSx
-
 
 function main()
 
@@ -12,14 +11,18 @@ function main()
 	check_arguments(args)
 
 	sites = load_sites(args["metadata"])
-	model = init_model(args["%COMMAND%"], args[args["%COMMAND%"]])
+	model = initiate_model(args["%COMMAND%"], args[args["%COMMAND%"]])
 	paths = Paths(args["train"], args["test"], args["save"])
+
+	elapsed = 0.0
 
 	for site in sites
 
-		simulate_site(site, model, paths) 
+		elapsed = @elapsed simulate_site(site, model, paths) 
 
 	end
+
+	save(paths.save, "time", elapsed)
 
 end
 

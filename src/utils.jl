@@ -25,7 +25,7 @@ function load_data(site_id::String, path_to_fodler::String)
 	data = CSV.read(path)
 end
 
-# generic functions for simulation - methods may have to be implemented for specific models
+# generic functions for simulation - methods may have to be implemented for specific models in models.jl
 
 function load_train_data!(site::Site, model::AbstractModel, paths::Paths)
 end
@@ -33,21 +33,25 @@ end
 function update_model!(model::AbstractModel, battery::Battery, data::DataFrame)
 end
 
-function cost(model::AbstractModel, time::Int64, state::Float64, control::Float64, noise::Float64)
+function cost(model::AbstractModel, time::Int64, state::Array{Float64,1}, control::Array{Float64,1},
+	noise::Array{Float64,1})
 	control = control*model.cost_parameters["pmax"]*0.25
 	energy_demand = control + noise
 	return (model.cost_parameters["buy_price"]*max(0,energy_demand) 
 		- model.cost_parameters["sell_price"]*max(0,-energy_demand))
 end
 
-function dynamics(model::AbstractModel, time::Int64, state::Float64, control::Float64, 
-	noise::Float64)
+function dynamics(model::AbstractModel, time::Int64, state::Array{Float64,1}, 
+	control::Array{Float64,1}, noise::Array{Float64,1}) 
 	normalize = model.dynamics_parameters["pmax"]*0.25/model.dynamics_parameters["cmax"]
 	return state + (model.dynamics_parameters["charge_efficiency"]*max(0,control) 
 		- max(0,-control)/model.dynamics_parameters["discharge_efficiency"])*normalize
 end
 
 function initiate_state(model::AbstractModel)
-	return [0.]
+	return [0.0]
 end
 
+function state_of_charge(model::AbstractModel, state::Array{Float64})
+	return state[1]
+end

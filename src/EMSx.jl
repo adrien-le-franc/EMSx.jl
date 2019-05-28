@@ -1,14 +1,27 @@
 module EMSx
 
+using ProgressMeter
 using ArgParse, CSV, DataFrames, JLD
 using StoOpt 
 
 include("struct.jl")
-include("utils.jl")
-include("simulate.jl") 
 
 export Paths, Site, Battery, Period, Scenario, Simulation
-export parse_commandline, check_arguments, load_sites, load_data
-export simulate_site, simulate_period!, simulate_scenario
+
+include("utils.jl")
+
+export load_sites, load_data
+
+include("arguments.jl")
+
+export parse_commandline, check_arguments
+
+include("simulate.jl") 
+
+export simulate_site
+
+include("models.jl")
+
+export initiate_model
 
 end 

@@ -21,7 +21,15 @@ end
 	period = Period("1", CSV.read(current_directory*"/data/1.csv"), site, Simulation[])
 	scenario = Scenario(site.id, period.id, site.batteries[1], period.data, model, paths)
 
-	@test simulate_scenario(scenario) == Simulation()
+	StoOpt.compute_control(m::DummyModel, cost::Function, dynamics::Function, 
+		t::Int64, state::Array{Float64,1}, value_functions::Nothing) = [0.0]
+	EMSx.cost(m::DummyModel, time::Int64, state::Array{Float64,1}, control::Array{Float64,1},
+	noise::Array{Float64,1}) = 0.0
+	EMSx.dynamics(m::AbstractModel, time::Int64, state::Array{Float64,1}, 
+		control::Array{Float64,1}, noise::Array{Float64,1}) = [0.0]
+
+	@test simulate_scenario(scenario) == Simulation(EMSx.Result(zeros(10), zeros(10)), 
+		EMSx.Id(scenario))
 	@test simulate_period!(period, model, paths) == nothing
 	@test simulate_site(site, model, paths) == nothing
 

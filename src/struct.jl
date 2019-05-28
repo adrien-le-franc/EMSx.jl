@@ -1,4 +1,4 @@
-# developed with Julia 1.0.3
+# developed with Julia 1.1.1
 #
 # struct for EMS simulation
 
@@ -22,7 +22,7 @@ struct Id
 	site_id::String
 	perdio_id::String
 	battery_id::String
-	model_name::String
+	model_type::DataType
 end
 
 
@@ -31,7 +31,7 @@ struct Simulation
 	id::Id
 end
 
-Simulation() = Simulation(Result(zeros(1), zeros(1)), Id("", "", "", ""))
+Simulation(h::Int64) = Simulation(Result(zeros(h), zeros(h)), Id("", "", "", ""))
 Base.:(==)(s1::Simulation, s2::Simulation) = (s1.result == s2.result && s1.id == s2.id)
 
 
@@ -79,7 +79,7 @@ mutable struct Period
 end
 
 
-mutable struct Scenario # restructurer avec ID... ??
+mutable struct Scenario
 	site_id::String
 	period_id::String
 	battery::Battery
@@ -87,3 +87,5 @@ mutable struct Scenario # restructurer avec ID... ??
 	model::AbstractModel
 	paths::Paths
 end
+
+Id(s::Scenario) = Id(s.site_id, s.period_id, s.battery.id, typeof(s.model))
