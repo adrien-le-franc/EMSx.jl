@@ -28,9 +28,9 @@ end
 	EMSx.dynamics(m::AbstractModel, time::Int64, state::Array{Float64,1}, 
 		control::Array{Float64,1}, noise::Array{Float64,1}) = [0.0]
 
-	@test simulate_scenario(scenario) == Simulation(EMSx.Result(zeros(10), zeros(10)), 
+	@test EMSx.simulate_scenario(scenario) == Simulation(EMSx.Result(zeros(10), zeros(10)), 
 		EMSx.Id(scenario))
-	@test simulate_period!(period, model, paths) == nothing
+	@test EMSx.simulate_period!(period, model, paths) == nothing
 	@test simulate_site(site, model, paths) == nothing
 
 end

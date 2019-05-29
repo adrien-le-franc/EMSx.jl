@@ -6,10 +6,7 @@
 function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 
 	test_data = load_data(site.id, paths.test_data)
-	train_data = load_data(site.id, paths.train_data)
-
-
-	#load_train_data!(site, model, paths)
+	train_data = load_train_data(site, model, paths)
 
 	periods = unique(test_data[:period_id])
 	simulations = Simulation[]
@@ -18,12 +15,14 @@ function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 
 		test_data_period = test_data[test_data.period_id .== period_id, :]
 		period = Period(string(period_id), test_data_period, site, Simulation[])
+
+		update_period!(period, model, train_data)
 		simulate_period!(period, model, paths)
 		append!(simulations, period.simulations)
 
 	end
 
-	save(paths.save, site.id, simulations)
+	save_simulations(paths.save, site.id, simulations)
 
 	return nothing 
 
@@ -33,7 +32,7 @@ function simulate_period!(period::Period, model::AbstractModel, paths::Paths)
 
 	for battery in period.site.batteries
 
-		update_model!(model, battery, period.data)
+		update_battery!(model, battery)
 		scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
 		simulation = simulate_scenario(scenario)
 		push!(period.simulations, simulation)
@@ -79,8 +78,8 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 
 		# gestion de MPC -> forecasts vs value functions
 
-		load = scenario.data[:actual_consumption][t]
-		pv = scenario.data[:actual_pv][t]
+		load = scenario.data[:actual_consumption][t] / 1000
+		pv = scenario.data[:actual_pv][t] / 1000
 		noise = [load-pv]
 
 		stage_cost = cost(scenario.model, t, state, control, noise)

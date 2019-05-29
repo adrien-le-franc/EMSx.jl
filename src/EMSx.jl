@@ -1,7 +1,8 @@
 module EMSx
 
-using ProgressMeter
-using ArgParse, CSV, DataFrames, JLD
+using ProgressMeter, ArgParse
+using Dates, CSV, DataFrames, JLD
+using Clustering
 using StoOpt 
 
 include("struct.jl")
@@ -10,7 +11,7 @@ export Paths, Site, Battery, Period, Scenario, Simulation
 
 include("utils.jl")
 
-export load_sites, load_data
+export load_sites, load_data, save_simulations, save_time
 
 include("arguments.jl")
 

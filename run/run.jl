@@ -18,11 +18,11 @@ function main()
 
 	for site in sites
 
-		elapsed = @elapsed simulate_site(site, model, paths) 
+		elapsed += @elapsed simulate_site(site, model, paths) 
 
 	end
 
-	save(paths.save, "time", elapsed)
+	save_time(paths.save, elapsed)
 
 end
 
