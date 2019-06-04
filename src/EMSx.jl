@@ -7,11 +7,15 @@ using StoOpt
 
 include("struct.jl")
 
-export Paths, Site, Battery, Period, Scenario, Simulation
+export Paths, Site
 
 include("utils.jl")
 
-export load_sites, load_data, save_simulations, save_time
+export save_time
+
+include("parser.jl")
+
+export load_sites
 
 include("arguments.jl")
 

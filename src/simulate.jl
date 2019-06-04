@@ -3,10 +3,10 @@
 # functions to simulate EMS
 
 
-function simulate_site(site::Site, model::AbstractModel, paths::Paths)
+function simulate_site(model::AbstractModel, site::Site, paths::Paths)
 
 	test_data = load_data(site.id, paths.test_data)
-	train_data = load_train_data(site, model, paths)
+	train_noise = load_train_data(model, site, paths)
 
 	periods = unique(test_data[:period_id])
 	simulations = Simulation[]
@@ -16,8 +16,8 @@ function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 		test_data_period = test_data[test_data.period_id .== period_id, :]
 		period = Period(string(period_id), test_data_period, site, Simulation[])
 
-		update_period!(period, model, train_data)
-		simulate_period!(period, model, paths)
+		update_period!(model, period, train_noise)
+		simulate_period!(model, period, paths)
 		append!(simulations, period.simulations)
 
 	end
@@ -28,7 +28,7 @@ function simulate_site(site::Site, model::AbstractModel, paths::Paths)
 
 end
 
-function simulate_period!(period::Period, model::AbstractModel, paths::Paths)
+function simulate_period!(model::AbstractModel, period::Period, paths::Paths)
 
 	for battery in period.site.batteries
 
@@ -66,24 +66,17 @@ end
 
 function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,Nothing}) 
 
-
 	state = initiate_state(scenario.model)
 	horizon = size(scenario.data, 1)
 	id = Id(scenario)
 	simulation = Simulation(Result(zeros(horizon), zeros(horizon)), id)
 
+	set_online_law!(scenario.model, scenario.data)
+
 	for t in 1:horizon
 
 		control = compute_control(scenario.model, cost, dynamics, t, state, value_functions)
-
-		# gestion de MPC -> forecasts vs value functions
-
-		load = scenario.data[:actual_consumption][t] / 1000
-		pv = scenario.data[:actual_pv][t] / 1000
-		noise = [load-pv]
-
-		stage_cost = cost(scenario.model, t, state, control, noise)
-		state = dynamics(scenario.model, t, state, control, noise)
+		stage_cost, state = apply_control(scenario, t, state, control)
 
 		simulation.result.cost[t] = stage_cost
 		simulation.result.soc[t] = state_of_charge(scenario.model, state)
@@ -91,5 +84,19 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 	end
 
 	return simulation
+
+end
+
+function apply_control(scenario::Scenario, t::Int64, state::Array{Float64,1}, 
+	control::Array{Float64,1})
+
+	load = scenario.data[:actual_consumption][t] / 1000
+	pv = scenario.data[:actual_pv][t] / 1000
+	noise = [load-pv]
+
+	stage_cost = cost(scenario.model, t, state, control, noise)
+	new_state = dynamics(scenario.model, t, state, control, noise)
+
+	return stage_cost, new_state
 
 end

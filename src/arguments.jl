@@ -1,4 +1,4 @@
-# developed with Julia 1.0.3
+# developed with Julia 1.1.1
 #
 # argument parsing
 
@@ -36,16 +36,16 @@ function parse_commandline()
 
         ## COMMANDS ##
 
-        "--SDP"
+        "--sdp"
             help = "dynamic programming with SDP model"
             action = :command
 
-        "--SDDP"
+        "--sddp"
             help = "dynamic programming with SDDP model"
             action = :command     
     end
 
-    @add_arg_table s["SDP"] begin
+    @add_arg_table s["sdp"] begin
         
         "--dx"
             help = "step of the normalized state Grid"
@@ -61,6 +61,11 @@ function parse_commandline()
             help = "horizon of control"
             arg_type = Int64
             default = 960
+
+        "--online"
+            help = "online law for noise: offline/forecast/observed"
+            arg_type = String
+            default = "offline"
 
     end
 
