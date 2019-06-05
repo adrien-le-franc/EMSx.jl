@@ -42,10 +42,7 @@ end
 function update_period!(model::AbstractModel, period::Period, data::DataFrame)
 end
 
-function update_battery!(model::AbstractModel, battery::Battery)
-end
-
-function set_online_law!(model::AbstractModel, data::DataFrame)
+function online_law(model::AbstractModel, data::DataFrame, t::Int64)
 end
 
 function initiate_state(model::AbstractModel)

@@ -42,6 +42,10 @@ function parse_commandline()
 
         "--sddp"
             help = "dynamic programming with SDDP model"
+            action = :command 
+
+        "--mpc"
+            help = "rolling horizon with MPC model"
             action = :command     
     end
 

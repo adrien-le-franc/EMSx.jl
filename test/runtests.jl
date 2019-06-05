@@ -15,8 +15,13 @@ end
 
 @testset "EMS simulator's body" begin
     
+	
+	struct DummyModel <: StoOpt.AbstractModel
+		cost_parameters::Dict{String,Any}
+    	dynamics_parameters::Dict{String,Any}
+	end
+	model = DummyModel(Dict(), Dict())
 	site = load_sites(current_directory*"/data/metadata.csv")[1]
-	model = DummyModel()
 	paths = Paths("", current_directory*"/data", current_directory*"/tmp/test.jld")
 	period = EMSx.Period("1", CSV.read(current_directory*"/data/1.csv"), site, EMSx.Simulation[])
 	scenario = EMSx.Scenario(site.id, period.id, site.batteries[1], period.data, model, paths)

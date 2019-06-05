@@ -6,7 +6,7 @@
 function simulate_site(model::AbstractModel, site::Site, paths::Paths)
 
 	test_data = load_data(site.id, paths.test_data)
-	train_noise = load_train_data(model, site, paths)
+	train_noises = load_train_data(model, site, paths)
 
 	periods = unique(test_data[:period_id])
 	simulations = Simulation[]
@@ -16,7 +16,7 @@ function simulate_site(model::AbstractModel, site::Site, paths::Paths)
 		test_data_period = test_data[test_data.period_id .== period_id, :]
 		period = Period(string(period_id), test_data_period, site, Simulation[])
 
-		update_period!(model, period, train_noise)
+		update_period!(model, period, train_noises)
 		simulate_period!(model, period, paths)
 		append!(simulations, period.simulations)
 
@@ -71,11 +71,10 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 	id = Id(scenario)
 	simulation = Simulation(Result(zeros(horizon), zeros(horizon)), id)
 
-	set_online_law!(scenario.model, scenario.data)
-
 	for t in 1:horizon
 
-		control = compute_control(scenario.model, cost, dynamics, t, state, value_functions)
+		noise = online_law(scenario.model, scenario.data, t)
+		control = compute_control(scenario.model, cost, dynamics, t, state, noise, value_functions)
 		stage_cost, state = apply_control(scenario, t, state, control)
 
 		simulation.result.cost[t] = stage_cost

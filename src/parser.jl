@@ -30,7 +30,7 @@ function load_train_data(model::DynamicProgrammingModel, site::Site, paths::Path
 
     data_frame = load_data(site.id, paths.train_data)
     sorted_data = parse_data_frame(model, data_frame)
-    noise_data_frames = data_to_noise(model, sorted_data, k)
+    noise_data_frames = data_to_noises(model, sorted_data, k)
 
     return noise_data_frames
     
@@ -84,7 +84,7 @@ function parse_data_frame(model::DynamicProgrammingModel, data::DataFrame)
 
 end
 
-function data_to_noise(model::DynamicProgrammingModel, data::Dict{String,Dict{Any,Any}}, 
+function data_to_noises(model::DynamicProgrammingModel, data::Dict{String,Dict{Any,Any}}, 
     k::Int64)
 
     noise_data = Dict("week_end_summer"=>DataFrame(), "week_end_winter"=>DataFrame(),
@@ -114,11 +114,11 @@ function data_to_noise(model::DynamicProgrammingModel, data::Dict{String,Dict{An
 
 end
 
-function train_noise_of_period(model::DynamicProgrammingModel, period::Period, 
-    train_noise::Dict{String, DataFrame})
+function train_noises_of_period(model::DynamicProgrammingModel, period::Period, 
+    train_noises::Dict{String, DataFrame})
 
     horizon = size(period.data, 1)
-    noise = Float64[]
+    noises = Float64[]
     probability = Float64[]
 
     for timestamp in period.data[:timestamp]
@@ -139,17 +139,17 @@ function train_noise_of_period(model::DynamicProgrammingModel, period::Period,
             weekday = "week_day"
         end
 
-        df = train_noise[weekday*"_"*season]
+        df = train_noises[weekday*"_"*season]
         df = df[df.timestamp .== timing, :]
 
-        push!(noise, df[1, :noise]...)
+        push!(noises, df[1, :noise]...)
         push!(probability, df[1, :probability]...)
 
     end
 
-    noise = collect(reshape(noise, :, horizon)')
+    noises = collect(reshape(noises, :, horizon)')
     probability = collect(reshape(probability, :, horizon)')
-    return  Noise(noise, probability)
+    return  Noises(noises, probability)
 
 end
 
