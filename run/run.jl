@@ -17,7 +17,7 @@ function main()
 	elapsed = 0.0
 
 	for site in sites
-
+		
 		elapsed += @elapsed simulate_site(model, site, paths) 
 
 	end

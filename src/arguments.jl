@@ -34,6 +34,7 @@ function parse_commandline()
         	arg_type = String
         	default = "/home/EMSx.jl/data/test"
 
+
         ## COMMANDS ##
 
         "--sdp"
@@ -46,7 +47,11 @@ function parse_commandline()
 
         "--mpc"
             help = "rolling horizon with MPC model"
-            action = :command     
+            action = :command
+
+        "--dummy"
+            help = "dummy EMS policy not using the battery"
+            action = :command    
     end
 
     @add_arg_table s["sdp"] begin
@@ -70,6 +75,24 @@ function parse_commandline()
             help = "online law for noise: offline/forecast/observed"
             arg_type = String
             default = "offline"
+
+    end
+
+    @add_arg_table s["mpc"] begin
+        
+        "--horizon"
+            help = "horizon of control"
+            arg_type = Int64
+            default = 96
+
+    end
+
+    @add_arg_table s["dummy"] begin
+        
+        "--horizon"
+            help = "horizon of control"
+            arg_type = Int64
+            default = 0
 
     end
 

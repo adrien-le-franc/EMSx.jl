@@ -59,7 +59,7 @@ function offline_step(scenario::Scenario)
 	if ! (typeof(model) <: DynamicProgrammingModel)
 		return nothing
 	else
-		return compute_value_functions(model, cost, dynamics)
+		return StoOpt.compute_value_functions(model, cost, dynamics)
 	end
 
 end
@@ -73,10 +73,18 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 
 	for t in 1:horizon
 
-		noise = online_law(scenario.model, scenario.data, t)
-		control = compute_control(scenario.model, cost, dynamics, t, state, noise, value_functions)
-		stage_cost, state = apply_control(scenario, t, state, control)
+		noise = online_information!(scenario.model, scenario.data, t)
+		control = StoOpt.compute_control(scenario.model, cost, dynamics, t, state, noise, 
+			value_functions)
 
+		#println("")
+		#println(scenario.model.model)
+		#println(JuMP.value.(scenario.model.model[:x_0]))
+		#println(JuMP.value.(scenario.model.model[:x]))
+		#println(JuMP.value.(scenario.model.model[:u]))
+
+
+		stage_cost, state = apply_control(scenario, t, state, control)
 		simulation.result.cost[t] = stage_cost
 		simulation.result.soc[t] = state_of_charge(scenario.model, state)
 
