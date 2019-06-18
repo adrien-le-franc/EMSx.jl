@@ -37,6 +37,7 @@ function initiate_model(model_name::String, args::Dict{String,Any})
 
     end
 
+    println("Model $(model_name) successfuly built, starting simulation")
     return model
 
 end

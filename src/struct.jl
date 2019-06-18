@@ -20,7 +20,7 @@ Base.:(==)(r1::Result, r2::Result) = (r1.cost == r2.cost && r1.soc == r2.soc)
 
 struct Id
 	site_id::String
-	perdio_id::String
+	period_id::String
 	battery_id::String
 	model_type::DataType
 end
