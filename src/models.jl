@@ -121,7 +121,7 @@ end
 
 # MPC 
 
-struct MPC <: RollingHorizonModel
+mutable struct MPC <: RollingHorizonModel
 
     model::Model
     cost_parameters::Dict{String,Any}
@@ -133,55 +133,52 @@ end
 function initiate_MPC(args::Dict{String,Any})
 
     model = Model(with_optimizer(Clp.Optimizer, LogLevel=0))
-
-    h = args["horizon"]
-    @variable(model, u_c[1:h])
-    @variable(model, u_d[1:h])
-    @variable(model, z[1:h])
-    @variable(model, w[1:h])
-    @variable(model, x[1:h+1])
-    @variable(model, x_0)
-    @expression(model, u, u_c-u_d)
-
-    @constraint(model, 0. .<= u_c .<= 1.)
-    @constraint(model, 0. .<= u_d .<= 1.)
-    @constraint(model, 0. .<= x .<= 1.)
-    @constraint(model, 0. .<= z)
-
-    model[:dynamics] = @constraint(model, x .== 0.)
-    model[:pmax] = @constraint(model, u+w .<= z)
-
-    weights = vcat(zeros(1, h), Array(LowerTriangular(ones(h, h))))
-    dynamics_parameters = Dict("dynamic_matrix"=>weights)
-
-    return MPC(model, Dict(), dynamics_parameters, h)
+    return MPC(model, Dict(), Dict(), args["horizon"])
 
 end
 
 function update_battery!(mpc::MPC, battery::Battery)
 
+    h = mpc.horizon
+    umax = battery.power*0.25
+    xmax = battery.capacity
+    rho_c = battery.charge_efficiency
+    rho_d = battery.discharge_efficiency
+    weights = vcat(zeros(1, h), Array(LowerTriangular(ones(h, h))))
+
+    model = Model(with_optimizer(Clp.Optimizer, LogLevel=0))
+
+    @variable(model, u_c[1:h])
+    @variable(model, u_d[1:h])
+    @variable(model, z[1:h])
+    @variable(model, x[1:h+1])
+    @variable(model, w[1:h])
+    @variable(model, x0)
+
+    @constraint(model, 0. .<= u_c)
+    @constraint(model, u_c .<= umax)
+    @constraint(model, 0. .<= u_d)
+    @constraint(model, u_d .<= umax)
+    @constraint(model, 0. .<= x)
+    @constraint(model, x .<= xmax)
+    @constraint(model, 0. .<= z )
+    @expression(model, u,  u_c - u_d)
+
+    @constraint(model, u.+w .<= z)
+    @constraint(model, diff(x) .== rho_c.*u_c .- u_d./rho_d)
+    @constraint(model, x[1] == x0)
+
+    #@constraint(model, x .== weights*(rho_c.*u_c .- u_d./rho_d) + x0)
+
+    mpc.model = model
+
     mpc.cost_parameters["pmax"] = battery.power
-    mpc.dynamics_parameters["charge_efficiency"] = battery.charge_efficiency
-    mpc.dynamics_parameters["discharge_efficiency"] = battery.discharge_efficiency
+    mpc.dynamics_parameters["charge_efficiency"] = rho_c
+    mpc.dynamics_parameters["discharge_efficiency"] = rho_d
     mpc.dynamics_parameters["pmax"] = battery.power
-    mpc.dynamics_parameters["cmax"] = battery.capacity
-    
-    model = mpc.model
+    mpc.dynamics_parameters["cmax"] = xmax
 
-    if all(JuMP.is_valid.(model, model[:dynamics]))
-        JuMP.delete.(model, model[:dynamics])
-    end
-
-    model[:dynamics] = @constraint(model, model[:x] .== (battery.power*0.25/battery.capacity.*
-        mpc.dynamics_parameters["dynamic_matrix"])*(battery.charge_efficiency.*model[:u_c] - 
-        model[:u_d]./battery.discharge_efficiency) + 
-        model[:x_0].*ones(mpc.horizon+1))
-
-    if all(JuMP.is_valid.(model, model[:pmax]))
-        JuMP.delete.(model, model[:pmax])
-    end
-
-    model[:pmax] = @constraint(model, model[:u]*battery.power*0.25+model[:w] .<= model[:z])
+    return nothing
 
 end
 
@@ -213,8 +210,7 @@ function online_information!(mpc::MPC, data::DataFrame, t::Int64)
     end
 
     JuMP.fix.(model[:w], forecast)
-    @objective(model, Min, sum(buy_prices.*model[:z] - sell_prices.*(model[:z]
-        -(model[:u]*mpc.cost_parameters["pmax"]*0.25+model[:w]))))
+    @objective(model, Min, sum(buy_prices.*model[:z]-sell_prices.*(model[:z]-model[:u]-model[:w])))
 
     return nothing
 
@@ -223,9 +219,9 @@ end
 function StoOpt.compute_control(mpc::MPC, cost::Function, dynamics::Function, 
     t::Int64, state::Array{Float64,1}, noise::Nothing, value_functions::Nothing)
 
-    JuMP.fix(mpc.model[:x_0], state[1])
+    JuMP.fix(mpc.model[:x0], state[1]*mpc.dynamics_parameters["cmax"])
     JuMP.optimize!(mpc.model)
-    return [JuMP.value(mpc.model[:u][1])]
+    return [JuMP.value(mpc.model[:u][1])] / (mpc.dynamics_parameters["pmax"]*0.25)
 
 end
 

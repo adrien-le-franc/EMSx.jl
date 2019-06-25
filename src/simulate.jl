@@ -81,7 +81,7 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 		#println(scenario.model.model)
 		#println(JuMP.value.(scenario.model.model[:x_0]))
 		#println(JuMP.value.(scenario.model.model[:x]))
-		#println(JuMP.value.(scenario.model.model[:u]))
+		#println(JuMP.value.(scenario.model.model[:u])) 
 
 
 		stage_cost, state = apply_control(scenario, t, state, control)
