@@ -34,7 +34,6 @@ function parse_commandline()
         	arg_type = String
         	default = "/home/EMSx.jl/data/test"
 
-
         ## COMMANDS ##
 
         "--sdp"
@@ -51,10 +50,23 @@ function parse_commandline()
 
         "--dummy"
             help = "dummy EMS policy not using the battery"
-            action = :command    
+            action = :command
+
     end
 
+    s["sdp"].commands_are_required = false
+
     @add_arg_table s["sdp"] begin
+
+        "--horizon"
+            help = "horizon of control"
+            arg_type = Int64
+            default = 960
+
+        "--k"
+            help = "cardinal of discrete noise space"
+            arg_type = Int64
+            default = 10
         
         "--dx"
             help = "step of the normalized state Grid"
@@ -66,16 +78,28 @@ function parse_commandline()
             arg_type = Float64
             default = 0.1
 
-        "--horizon"
-            help = "horizon of control"
-            arg_type = Int64
-            default = 960
-
         "--online"
             help = "online law for noise: offline/forecast/observed"
             arg_type = String
             default = "offline"
 
+        "--ar"
+            help = "modeling noises with an ar process"
+            action = :command
+
+    end
+
+    @add_arg_table s["sdp"]["ar"] begin
+        
+        "--lags"
+            help = "number p of lags for AR(p)"
+            arg_type = Int64
+            default = 1
+
+        "--dw"
+            help = "step of the normalized noise lags grid"
+            arg_type = Float64
+            default = 0.1
     end
 
     @add_arg_table s["mpc"] begin
@@ -94,6 +118,11 @@ function parse_commandline()
             arg_type = Int64
             default = 0
 
+    end
+
+    parsed_args = parse_args(s)
+    for (key, val) in parsed_args
+        println("  $key  =>  $(repr(val))")
     end
 
     return parse_args(s)

@@ -1,12 +1,12 @@
 # developed with Julia 1.1.1
 #
-# functions to simulate EMS
+# functions to simulate EMS 
 
 
 function simulate_site(model::AbstractModel, site::Site, paths::Paths)
 
 	test_data = load_data(site.id, paths.test_data)
-	train_noises = load_train_data(model, site, paths)
+	train_noises = load_train_data!(model, site, paths)
 
 	periods = unique(test_data[:period_id])
 	simulations = Simulation[]
@@ -77,13 +77,6 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 		control = StoOpt.compute_control(scenario.model, cost, dynamics, t, state, noise, 
 			value_functions)
 
-		#println("")
-		#println(scenario.model.model)
-		#println(JuMP.value.(scenario.model.model[:x_0]))
-		#println(JuMP.value.(scenario.model.model[:x]))
-		#println(JuMP.value.(scenario.model.model[:u])) 
-
-
 		stage_cost, state = apply_control(scenario, t, state, control)
 		simulation.result.cost[t] = stage_cost
 		simulation.result.soc[t] = state_of_charge(scenario.model, state)
@@ -99,10 +92,10 @@ function apply_control(scenario::Scenario, t::Int64, state::Array{Float64,1},
 
 	load = scenario.data[:actual_consumption][t] / 1000
 	pv = scenario.data[:actual_pv][t] / 1000
-	noise = [load-pv]
+	net_energy_demand = [load-pv]
 
-	stage_cost = cost(scenario.model, t, state, control, noise)
-	new_state = dynamics(scenario.model, t, state, control, noise)
+	stage_cost = online_cost(scenario.model, t, state, control, net_energy_demand)
+	new_state = online_dynamics(scenario.model, t, state, control, net_energy_demand)
 
 	return stage_cost, new_state
 

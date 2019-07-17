@@ -13,6 +13,10 @@ include("struct.jl")
 
 export Paths, Site
 
+include("models.jl")
+
+export initiate_model
+
 include("utils.jl")
 
 export save_time
@@ -28,9 +32,5 @@ export parse_commandline, check_arguments
 include("simulate.jl") 
 
 export simulate_site
-
-include("models.jl")
-
-export initiate_model
 
 end 

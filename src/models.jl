@@ -13,15 +13,31 @@ function initiate_model(model_name::String, args::Dict{String,Any})
 
     if model_name == "sdp" 
 
-        if args["online"] == "offline"
-            model = initiate_SDP(args)
-        elseif args["online"] == "forecast"
-            model = initiate_SDPOF(args)
-        elseif args["online"] == "observed"
-            model = initiate_SDPOO(args)
+        if args["%COMMAND%"] == "ar"
+
+             if args["online"] == "offline"
+                model = initiate_SDPAR(args)
+            elseif args["online"] == "forecast"
+                model = initiate_SDPAROF(args)
+            elseif args["online"] == "observed"
+                model = initiate_SDPAROO(args)
+            else
+                error("SdpAR online law $(args["online"]) is not implemented")
+            end 
+
         else
-            error("SDP online law $(args["online"]) is not implemented")
-        end 
+
+            if args["online"] == "offline"
+                model = initiate_SDP(args)
+            elseif args["online"] == "forecast"
+                model = initiate_SDPOF(args)
+            elseif args["online"] == "observed"
+                model = initiate_SDPOO(args)
+            else
+                error("SDP online law $(args["online"]) is not implemented")
+            end            
+
+        end
 
     elseif model_name == "mpc"
 
@@ -51,7 +67,7 @@ function update_period!(model::DynamicProgrammingModel, period::Period,
 
     model.cost_parameters["buy_price"] =  Array(period.data[:price_buy_00])
     model.cost_parameters["sell_price"] = Array(period.data[:price_sell_00])
-    model.noises = train_noises_of_period(model, period, train_noises)
+    model.noises = train_noises_of_period!(model, period, train_noises)
 
 end
 
@@ -65,7 +81,8 @@ function update_battery!(model::AbstractModel, battery::Battery)
 
 end
 
-# SDP
+# SDP model
+# Online law = offline law
 
 initiate_SDP(args::Dict{String,Any}) = SDP(Grid(0:args["dx"]:1, enumerate=true), 
     Grid(-1:args["du"]:1), nothing, args["cost_parameters"], args["dynamics_parameters"], 
@@ -84,6 +101,7 @@ mutable struct SDPOF <: SdpModel
     cost_parameters::Dict{String,Any}
     dynamics_parameters::Dict{String,Any}
     horizon::Int64
+    noise_points::Int64
 
 end
 
@@ -107,6 +125,7 @@ mutable struct SDPOO <: SdpModel
     cost_parameters::Dict{String,Any}
     dynamics_parameters::Dict{String,Any}
     horizon::Int64
+    noise_points::Int64
 
 end
 
@@ -115,9 +134,87 @@ initiate_SDPOO(args::Dict{String,Any}) = SDPOO(Grid(0:args["dx"]:1, enumerate=tr
     args["horizon"])
 
 function online_information!(sdpoo::SDPOO, data::DataFrame, t::Int64)
-    observed = [data[:actual_consumption][t] - data[:actual_pv][t]] / 1000
+    if t == 1
+        observed = [data[:actual_consumption][1] - data[:actual_pv][1]] / 1000
+    else
+        observed = [data[:actual_consumption][t-1] - data[:actual_pv][t-1]] / 1000
+    end
     return RandomVariable(reshape(observed, 1, 1), [1.])
 end
+
+# SdpAR
+# State dynamics includes an AR(p) modeling of the noise process
+
+abstract type SdpAR <: StoOpt.SdpModel end
+
+function cost(model::SdpAR, t::Int64, state::Array{Float64,1}, control::Array{Float64,1},
+    noise::Array{Float64,1})
+    control = control*model.cost_parameters["pmax"]*0.25
+
+    w = dynamics(model, t, state, control, noise)[2:end]
+    w = (w*(model.dynamics_parameters["noise_upper_bound"]
+        -model.dynamics_parameters["noise_lower_bound"]) .+ 
+    model.dynamics_parameters["noise_lower_bound"])
+
+    energy_demand = (control + w + noise)[1]
+
+    return (model.cost_parameters["buy_price"][t]*max(0.,energy_demand) 
+        - model.cost_parameters["sell_price"][t]*max(0.,-energy_demand))
+end
+
+function dynamics(model::SdpAR, t::Int64, state::Array{Float64,1}, 
+    control::Array{Float64,1}, noise::Array{Float64,1}) 
+
+    normalize = model.dynamics_parameters["pmax"]*0.25/model.dynamics_parameters["cmax"]
+
+    soc = state[1] + (model.dynamics_parameters["charge_efficiency"]*max(0.,control[1]) 
+        - max(0.,-control[1])/model.dynamics_parameters["discharge_efficiency"])*normalize
+
+    weights = model.dynamics_parameters["ar_period_weights"][t, :]
+    lags = push!(state[2:end],1.)
+    prediction = lags'*weights
+    prediction = min(max(prediction, 0.), 1.)
+
+    return [soc, prediction, state[2:end-1]...]
+
+end
+
+function initiate_state(model::SdpAR)
+    return append!([0.0], [0.5 for i in 1:model.lags])
+end
+
+
+# SdpAR 
+# Online law = offline law
+
+
+mutable struct SDPAR <: SdpAR
+
+    states::Grid
+    controls::Grid
+    noises::Union{Noises, Nothing}
+    cost_parameters::Dict{String,Any}
+    dynamics_parameters::Dict{String,Any}
+    horizon::Int64
+    noise_points::Int64
+    lags::Int64
+
+end
+
+function initiate_SDPAR(args::Dict{String,Any}) 
+
+    states = [0:args["dx"]:1]
+    for lag in args["ar"]["lags"]
+        push!(states, 0:args["ar"]["dw"]:1)
+    end
+
+    SDPAR(Grid(states..., enumerate=true), 
+    Grid(-1:args["du"]:1), nothing, args["cost_parameters"], args["dynamics_parameters"], 
+    args["horizon"], args["k"], args["ar"]["lags"])
+end
+
+online_information!(sdp::SDPAR, df::DataFrame, t::Int64) = RandomVariable(sdp.noises, t)
+
 
 # MPC 
 
@@ -167,8 +264,6 @@ function update_battery!(mpc::MPC, battery::Battery)
     @constraint(model, u.+w .<= z)
     @constraint(model, diff(x) .== rho_c.*u_c .- u_d./rho_d)
     @constraint(model, x[1] == x0)
-
-    #@constraint(model, x .== weights*(rho_c.*u_c .- u_d./rho_d) + x0)
 
     mpc.model = model
 

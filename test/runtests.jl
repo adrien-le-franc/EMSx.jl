@@ -23,9 +23,9 @@ end
 	period = EMSx.Period("1", CSV.read(current_directory*"/data/1.csv"), site, EMSx.Simulation[])
 	scenario = EMSx.Scenario(site.id, period.id, site.batteries[1], period.data, model, paths)
 
-	EMSx.cost(m::AbstractModel, time::Int64, state::Array{Float64,1}, control::Array{Float64,1},
+	EMSx.online_cost(m::AbstractModel, time::Int64, state::Array{Float64,1}, control::Array{Float64,1},
 	noise::Array{Float64,1}) = 0.0
-	EMSx.dynamics(m::AbstractModel, time::Int64, state::Array{Float64,1}, 
+	EMSx.online_dynamics(m::AbstractModel, time::Int64, state::Array{Float64,1}, 
 		control::Array{Float64,1}, noise::Array{Float64,1}) = [0.0]
 
 	@test EMSx.simulate_scenario(scenario) == EMSx.Simulation(EMSx.Result(zeros(10), zeros(10)), 
