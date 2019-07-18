@@ -73,7 +73,7 @@ function online_step(scenario::Scenario, value_functions::Union{ValueFunctions,N
 
 	for t in 1:horizon
 
-		noise = online_information!(scenario.model, scenario.data, t)
+		noise = online_information!(scenario.model, scenario.data, state, t)
 		control = StoOpt.compute_control(scenario.model, cost, dynamics, t, state, noise, 
 			value_functions)
 

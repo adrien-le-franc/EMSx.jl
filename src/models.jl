@@ -88,7 +88,8 @@ initiate_SDP(args::Dict{String,Any}) = SDP(Grid(0:args["dx"]:1, enumerate=true),
     Grid(-1:args["du"]:1), nothing, args["cost_parameters"], args["dynamics_parameters"], 
     args["horizon"])
 
-online_information!(sdp::SDP, df::DataFrame, t::Int64) = RandomVariable(sdp.noises, t)
+online_information!(sdp::SDP, df::DataFrame, state::Array{Float64,1}, t::Int64) = RandomVariable(
+    sdp.noises, t)
 
 # SDPOF 
 # Online law based on online Forecast
@@ -109,7 +110,7 @@ initiate_SDPOF(args::Dict{String,Any}) = SDPOF(Grid(0:args["dx"]:1, enumerate=tr
     Grid(-1:args["du"]:1), nothing, args["cost_parameters"], args["dynamics_parameters"],
     args["horizon"])
 
-function online_information!(sdpof::SDPOF, data::DataFrame, t::Int64)
+function online_information!(sdpof::SDPOF, data::DataFrame, state::Array{Float64,1}, t::Int64)
     forecast = [data[:load_00][t] - data[:pv_00][t]] / 1000
     return RandomVariable(reshape(forecast, 1, 1), [1.])
 end
@@ -133,7 +134,7 @@ initiate_SDPOO(args::Dict{String,Any}) = SDPOO(Grid(0:args["dx"]:1, enumerate=tr
     Grid(-1:args["du"]:1), nothing, args["cost_parameters"], args["dynamics_parameters"], 
     args["horizon"])
 
-function online_information!(sdpoo::SDPOO, data::DataFrame, t::Int64)
+function online_information!(sdpoo::SDPOO, data::DataFrame, state::Array{Float64,1}, t::Int64)
     if t == 1
         observed = [data[:actual_consumption][1] - data[:actual_pv][1]] / 1000
     else
@@ -142,8 +143,10 @@ function online_information!(sdpoo::SDPOO, data::DataFrame, t::Int64)
     return RandomVariable(reshape(observed, 1, 1), [1.])
 end
 
+
 # SdpAR
 # State dynamics includes an AR(p) modeling of the noise process
+
 
 abstract type SdpAR <: StoOpt.SdpModel end
 
@@ -183,10 +186,8 @@ function initiate_state(model::SdpAR)
     return append!([0.0], [0.5 for i in 1:model.lags])
 end
 
-
-# SdpAR 
+# SDPAR
 # Online law = offline law
-
 
 mutable struct SDPAR <: SdpAR
 
@@ -213,10 +214,58 @@ function initiate_SDPAR(args::Dict{String,Any})
     args["horizon"], args["k"], args["ar"]["lags"])
 end
 
-online_information!(sdp::SDPAR, df::DataFrame, t::Int64) = RandomVariable(sdp.noises, t)
+online_information!(sdp::SDPAR, df::DataFrame, state::Array{Float64,1}, t::Int64) = RandomVariable(
+    sdp.noises, t)
+
+# SDPAROF 
+# Online law based on online Forecast
+
+mutable struct SDPAROF <: SdpAR
+
+    states::Grid
+    controls::Grid
+    noises::Union{Noises, Nothing}
+    cost_parameters::Dict{String,Any}
+    dynamics_parameters::Dict{String,Any}
+    horizon::Int64
+    noise_points::Int64
+    lags::Int64
+
+end
+
+function initiate_SDPAROF(args::Dict{String,Any}) 
+
+    states = [0:args["dx"]:1]
+    for lag in args["ar"]["lags"]
+        push!(states, 0:args["ar"]["dw"]:1)
+    end
+
+    SDPAR(Grid(states..., enumerate=true), 
+    Grid(-1:args["du"]:1), nothing, args["cost_parameters"], args["dynamics_parameters"], 
+    args["horizon"], args["k"], args["ar"]["lags"])
+end
+
+online_information!(sdp::SDPAROF, df::DataFrame, t::Int64) = RandomVariable(sdp.noises, t)
+
+function online_information!(model::SDPAROF, data::DataFrame, state::Array{Float64,1}, t::Int64)
+
+    forecast = [data[:load_00][t] - data[:pv_00][t]] / 1000
+    forecast = normalize(model, forecast)
+    forecast = min(max(prediction, 0.), 1.)
+
+    weights = model.dynamics_parameters["ar_period_weights"][t, :]
+    lags = push!(state[2:end],1.)
+    prediction = lags'*weights
+    prediction = min(max(prediction, 0.), 1.)
+
+    prediction_error = [forecast - prediction]
+
+    return RandomVariable(reshape(prediction_error, 1, 1), [1.])
+end
 
 
 # MPC 
+
 
 mutable struct MPC <: RollingHorizonModel
 
@@ -277,7 +326,7 @@ function update_battery!(mpc::MPC, battery::Battery)
 
 end
 
-function online_information!(mpc::MPC, data::DataFrame, t::Int64)
+function online_information!(mpc::MPC, data::DataFrame, state::Array{Float64,1}, t::Int64)
 
     df = data[t, :]
     model = mpc.model

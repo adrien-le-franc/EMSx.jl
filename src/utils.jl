@@ -44,7 +44,7 @@ function update_period!(model::AbstractModel, period::Period, data::DataFrame)
     model.cost_parameters["sell_price"] = Array(period.data[:price_sell_00])
 end
 
-function online_information!(model::AbstractModel, data::DataFrame, t::Int64)
+function online_information!(model::AbstractModel, data::DataFrame, state::Array{Float64,1}, t::Int64)
 end
 
 function initiate_state(model::AbstractModel)
