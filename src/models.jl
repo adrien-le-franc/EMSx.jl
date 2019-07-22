@@ -154,12 +154,12 @@ function cost(model::SdpAR, t::Int64, state::Array{Float64,1}, control::Array{Fl
     noise::Array{Float64,1})
     control = control*model.cost_parameters["pmax"]*0.25
 
-    w = dynamics(model, t, state, control, noise)[2:end]
+    w = dynamics(model, t, state, control, noise)[2]
     w = (w*(model.dynamics_parameters["noise_upper_bound"]
-        -model.dynamics_parameters["noise_lower_bound"]) .+ 
+        -model.dynamics_parameters["noise_lower_bound"]) + 
     model.dynamics_parameters["noise_lower_bound"])
 
-    energy_demand = (control + w + noise)[1]
+    energy_demand = (control[1] + w + noise[1])
 
     return (model.cost_parameters["buy_price"][t]*max(0.,energy_demand) 
         - model.cost_parameters["sell_price"][t]*max(0.,-energy_demand))
@@ -205,7 +205,7 @@ end
 function initiate_SDPAR(args::Dict{String,Any}) 
 
     states = [0:args["dx"]:1]
-    for lag in args["ar"]["lags"]
+    for lag in 1:args["ar"]["lags"]
         push!(states, 0:args["ar"]["dw"]:1)
     end
 
@@ -236,7 +236,7 @@ end
 function initiate_SDPAROF(args::Dict{String,Any}) 
 
     states = [0:args["dx"]:1]
-    for lag in args["ar"]["lags"]
+    for lag in 1:args["ar"]["lags"]
         push!(states, 0:args["ar"]["dw"]:1)
     end
 
