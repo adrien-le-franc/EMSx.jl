@@ -34,6 +34,11 @@ function parse_commandline()
         	arg_type = String
         	default = "/home/EMSx.jl/data/test"
 
+        "--prices"
+            help = "price .csv file"
+            arg_type = String
+            default = "/home/EMSx.jl/data/prices/edf.csv"
+
         ## COMMANDS ##
 
         "--sdp"

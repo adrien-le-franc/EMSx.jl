@@ -40,8 +40,8 @@ function dynamics(model::AbstractModel, time::Int64, state::Array{Float64,1},
 end
 
 function update_period!(model::AbstractModel, period::Period, data::DataFrame)
-	model.cost_parameters["buy_price"] =  Array(period.data[:price_buy_00])
-    model.cost_parameters["sell_price"] = Array(period.data[:price_sell_00])
+	model.cost_parameters["buy_price"] =  model.prices[:, [:timestamp, :buy]] #Array(period.data[:price_buy_00])
+    model.cost_parameters["sell_price"] = model.prices[:, [:timestamp, :sell]] #Array(period.data[:price_sell_00])
 end
 
 function online_information!(model::AbstractModel, data::DataFrame, state::Array{Float64,1}, t::Int64)
@@ -59,7 +59,7 @@ function online_cost(model::AbstractModel, t::Int64, state::Array{Float64,1}, co
 	net_energy_demand::Array{Float64,1})
 	control = control*model.cost_parameters["pmax"]*0.25
 	imported_energy = (control + net_energy_demand)[1]
-	return (model.cost_parameters["buy_price"][t]*max(0.,imported_energy) 
+	return (model.cost_parameters["buy_price"][t]*max(0.,imported_energy) ### buy/sell price -> adapter aux tarifs ...
 		- model.cost_parameters["sell_price"][t]*max(0.,-imported_energy))
 end
 

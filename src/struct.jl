@@ -51,24 +51,14 @@ end
 
 function Site(data::DataFrame, row::Int64)
 
-	id = string(data[row, :SiteId])
+	id = string(data[row, :site_id])
+	battery = Battery("1", [float(x) for x in data[row, 3:end]]...)
 
-	batteries = Battery[]
-	number_of_batteries = Int((size(data, 2)-1) / 4)
-	battery_fields = ["Capacity", "Power", "Charge_Efficiency", "Discharge_Efficiency"]
-
-	for battery_id in 1:number_of_batteries
-		args =  Float64[]
-		for field in battery_fields
-			arg = data[row, Symbol("Battery_$(battery_id)_$(field)")]
-			push!(args, float(arg))
-		end
-		push!(batteries, Battery(string(battery_id), args...))
-	end
-
-	return Site(id, batteries)
+	return Site(id, battery)
 	
 end
+
+
 
 
 mutable struct Period 

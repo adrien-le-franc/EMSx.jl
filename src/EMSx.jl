@@ -3,7 +3,7 @@ module EMSx
 using ProgressMeter, ArgParse
 using Dates, CSV, DataFrames, JLD
 using Clustering, LinearAlgebra
-using Clp
+using Clp, CPLEX
 using StoOpt 
 
 import JuMP

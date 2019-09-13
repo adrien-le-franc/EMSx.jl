@@ -30,6 +30,13 @@ end
 
 function simulate_period!(model::AbstractModel, period::Period, paths::Paths)
 
+	battery = period.site.batteries
+	update_battery!(model, battery)
+	scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
+	simulation = simulate_scenario(scenario)
+	push!(period.simulations, simulation)
+
+	"""
 	for battery in period.site.batteries
 
 		update_battery!(model, battery)
@@ -38,6 +45,7 @@ function simulate_period!(model::AbstractModel, period::Period, paths::Paths)
 		push!(period.simulations, simulation)
 
 	end
+	"""
 
 	return nothing
 

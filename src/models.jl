@@ -273,13 +273,16 @@ mutable struct MPC <: RollingHorizonModel
     cost_parameters::Dict{String,Any}
     dynamics_parameters::Dict{String,Any}
     horizon::Int64
+    prices::DataFrame
 
 end
 
 function initiate_MPC(args::Dict{String,Any})
 
-    model = Model(with_optimizer(Clp.Optimizer, LogLevel=0))
-    return MPC(model, Dict(), Dict(), args["horizon"])
+    #model = Model(with_optimizer(Clp.Optimizer, LogLevel=0))
+    model = Model(with_optimizer(CPLEX.Optimizer, CPX_PARAM_SCRIND=0))
+    return MPC(model, Dict(), Dict(), args["horizon"], 
+        CSV.read("/home/data/schneider/emsx/all/prices/edf.csv"))
 
 end
 
@@ -292,7 +295,7 @@ function update_battery!(mpc::MPC, battery::Battery)
     rho_d = battery.discharge_efficiency
     weights = vcat(zeros(1, h), Array(LowerTriangular(ones(h, h))))
 
-    model = Model(with_optimizer(Clp.Optimizer, LogLevel=0))
+    model = Model(with_optimizer(CPLEX.Optimizer, CPX_PARAM_SCRIND=0))
 
     @variable(model, u_c[1:h])
     @variable(model, u_d[1:h])
@@ -327,6 +330,9 @@ function update_battery!(mpc::MPC, battery::Battery)
 end
 
 function online_information!(mpc::MPC, data::DataFrame, state::Array{Float64,1}, t::Int64)
+    """
+    !! modif schneider
+    """
 
     df = data[t, :]
     model = mpc.model
@@ -335,6 +341,8 @@ function online_information!(mpc::MPC, data::DataFrame, state::Array{Float64,1},
     buy_prices = zeros(mpc.horizon)
     sell_prices = zeros(mpc.horizon)
 
+    timestamp = Dates.Time(df[:timestamp])
+
     for k in 0:95
 
             quater_ahead = string(k)
@@ -342,19 +350,28 @@ function online_information!(mpc::MPC, data::DataFrame, state::Array{Float64,1},
                 quater_ahead = "0"*quater_ahead
             end
             forecast[k+1] = (df[Symbol("load_$(quater_ahead)")] 
-                - df[Symbol("pv_$(quater_ahead)")]) / 1000
+                - df[Symbol("pv_$(quater_ahead)")]) 
 
-            if k > min(960-t, 95)
-                continue
+            #if k > min(96-t, 95)
+            #    continue    
+            #end
+
+            timing = string(timestamp + Dates.Minute(15*k))
+            buy_prices[k+1] = mpc.prices[mpc.prices.timestamp .== timing, :buy][1]
+            sell_prices[k+1] = mpc.prices[mpc.prices.timestamp .== timing, :sell][1]
+
+            if k > min(672-t, 95)
+                continue    
             end
 
-            buy_prices[k+1] = df[Symbol("price_buy_$(quater_ahead)")]
-            sell_prices[k+1] = df[Symbol("price_sell_$(quater_ahead)")]
+            #buy_prices[k+1] = df[Symbol("price_buy_$(quater_ahead)")]
+            #sell_prices[k+1] = df[Symbol("price_sell_$(quater_ahead)")]
             
     end
 
     JuMP.fix.(model[:w], forecast)
     @objective(model, Min, sum(buy_prices.*model[:z]-sell_prices.*(model[:z]-model[:u]-model[:w])))
+    #@objective(model, Min, sum(buy_prices.*model[:z]-sell_prices.*(model[:z]-model[:u]-model[:w])) - 0.1235*model[:x][96-t+1])
 
     return nothing
 
