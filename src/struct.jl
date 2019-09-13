@@ -58,9 +58,6 @@ function Site(data::DataFrame, row::Int64)
 	
 end
 
-
-
-
 mutable struct Period 
 	id::String
 	data::DataFrame
@@ -79,3 +76,30 @@ mutable struct Scenario
 end
 
 Id(s::Scenario) = Id(s.site_id, s.period_id, s.battery.id, typeof(s.model))
+
+struct Price
+	price_buy::DataFrame
+	price_sell::DataFrame
+end
+
+function Price(prices::DataFrame)
+
+	price_buy = DataFrame(timing=collect(Dates.Time(0, 0, 0):Dates.Minute(15):Dates.Time(23, 45, 0)))
+	price_buy[:weekday] = prices[:buy]
+	if Symbol("buy_weekend") in names(prices)
+		price_buy[:weekend] = prices[:buy_weekend]
+	else
+		price_buy[:weekend] = prices[:buy]
+	end
+
+	price_sell = DataFrame(timing=collect(Dates.Time(0, 0, 0):Dates.Minute(15):Dates.Time(23, 45, 0)))
+	price_sell[:weekday] = prices[:sell]
+	if Symbol("sell_weekend") in names(prices)
+		price_sell[:weekend] = prices[:sell_weekend]
+	else
+		price_sell[:weekend] = prices[:sell]
+	end
+
+	return Price(price_buy, price_sell)
+
+end

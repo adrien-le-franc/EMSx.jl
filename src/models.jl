@@ -273,7 +273,7 @@ mutable struct MPC <: RollingHorizonModel
     cost_parameters::Dict{String,Any}
     dynamics_parameters::Dict{String,Any}
     horizon::Int64
-    prices::DataFrame
+    prices::Price
 
 end
 
@@ -282,7 +282,7 @@ function initiate_MPC(args::Dict{String,Any})
     #model = Model(with_optimizer(Clp.Optimizer, LogLevel=0))
     model = Model(with_optimizer(CPLEX.Optimizer, CPX_PARAM_SCRIND=0))
     return MPC(model, Dict(), Dict(), args["horizon"], 
-        CSV.read("/home/data/schneider/emsx/all/prices/edf.csv"))
+        Price(CSV.read("/home/data/schneider/emsx/all/prices/edf.csv")))
 
 end
 
@@ -341,7 +341,7 @@ function online_information!(mpc::MPC, data::DataFrame, state::Array{Float64,1},
     buy_prices = zeros(mpc.horizon)
     sell_prices = zeros(mpc.horizon)
 
-    timestamp = Dates.Time(df[:timestamp])
+    timestamp = df[:timestamp]
 
     for k in 0:95
 
@@ -349,29 +349,23 @@ function online_information!(mpc::MPC, data::DataFrame, state::Array{Float64,1},
             if k < 10
                 quater_ahead = "0"*quater_ahead
             end
+
             forecast[k+1] = (df[Symbol("load_$(quater_ahead)")] 
                 - df[Symbol("pv_$(quater_ahead)")]) 
-
-            #if k > min(96-t, 95)
-            #    continue    
-            #end
-
-            timing = string(timestamp + Dates.Minute(15*k))
-            buy_prices[k+1] = mpc.prices[mpc.prices.timestamp .== timing, :buy][1]
-            sell_prices[k+1] = mpc.prices[mpc.prices.timestamp .== timing, :sell][1]
 
             if k > min(672-t, 95)
                 continue    
             end
 
-            #buy_prices[k+1] = df[Symbol("price_buy_$(quater_ahead)")]
-            #sell_prices[k+1] = df[Symbol("price_sell_$(quater_ahead)")]
-            
+            new_timestamp = timestamp + Dates.Minute(15*k)
+
+            buy_prices[k+1] = buy(new_timestamp, mpc.prices)
+            sell_prices[k+1] = sell(new_timestamp, mpc.prices)
+    
     end
 
     JuMP.fix.(model[:w], forecast)
     @objective(model, Min, sum(buy_prices.*model[:z]-sell_prices.*(model[:z]-model[:u]-model[:w])))
-    #@objective(model, Min, sum(buy_prices.*model[:z]-sell_prices.*(model[:z]-model[:u]-model[:w])) - 0.1235*model[:x][96-t+1])
 
     return nothing
 
@@ -391,9 +385,11 @@ end
 struct DummyModel <: AbstractModel
         cost_parameters::Dict{String,Any}
         dynamics_parameters::Dict{String,Any}
+        prices::Price
 end
 
-initiate_DummyModel() = DummyModel(Dict(), Dict())
+initiate_DummyModel() = DummyModel(Dict(), Dict(), 
+    Price(CSV.read("/home/data/schneider/emsx/all/prices/edf.csv")))
 
 StoOpt.compute_control(m::DummyModel, cost::Function, dynamics::Function, 
         t::Int64, state::Array{Float64,1}, noise::Nothing, value_functions::Nothing) = [0.0]

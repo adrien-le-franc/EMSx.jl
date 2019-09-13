@@ -98,11 +98,11 @@ end
 function apply_control(scenario::Scenario, t::Int64, state::Array{Float64,1}, 
 	control::Array{Float64,1})
 
-	load = scenario.data[:actual_consumption][t] / 1000
-	pv = scenario.data[:actual_pv][t] / 1000
+	load = scenario.data[:actual_consumption][t] 
+	pv = scenario.data[:actual_pv][t] 
 	net_energy_demand = [load-pv]
 
-	stage_cost = online_cost(scenario.model, t, state, control, net_energy_demand)
+	stage_cost = online_cost(scenario, t, state, control, net_energy_demand)
 	new_state = online_dynamics(scenario.model, t, state, control, net_energy_demand)
 
 	return stage_cost, new_state

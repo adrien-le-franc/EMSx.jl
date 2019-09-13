@@ -40,8 +40,8 @@ function dynamics(model::AbstractModel, time::Int64, state::Array{Float64,1},
 end
 
 function update_period!(model::AbstractModel, period::Period, data::DataFrame)
-	model.cost_parameters["buy_price"] =  model.prices[:, [:timestamp, :buy]] #Array(period.data[:price_buy_00])
-    model.cost_parameters["sell_price"] = model.prices[:, [:timestamp, :sell]] #Array(period.data[:price_sell_00])
+	model.cost_parameters["buy_price"] =  model.prices.price_buy #[:, [:timestamp, :buy]] #Array(period.data[:price_buy_00])
+    model.cost_parameters["sell_price"] = model.prices.price_sell #[:, [:timestamp, :sell]] #Array(period.data[:price_sell_00])
 end
 
 function online_information!(model::AbstractModel, data::DataFrame, state::Array{Float64,1}, t::Int64)
@@ -55,12 +55,14 @@ function state_of_charge(model::AbstractModel, state::Array{Float64})
 	return state[1]
 end
 
-function online_cost(model::AbstractModel, t::Int64, state::Array{Float64,1}, control::Array{Float64,1},
+function online_cost(scenario::Scenario, t::Int64, state::Array{Float64,1}, control::Array{Float64,1},
 	net_energy_demand::Array{Float64,1})
-	control = control*model.cost_parameters["pmax"]*0.25
+	control = control*scenario.model.cost_parameters["pmax"]*0.25
 	imported_energy = (control + net_energy_demand)[1]
-	return (model.cost_parameters["buy_price"][t]*max(0.,imported_energy) ### buy/sell price -> adapter aux tarifs ...
-		- model.cost_parameters["sell_price"][t]*max(0.,-imported_energy))
+	timestamp = scenario.data[t, :timestamp]
+	prices = scenario.model.prices
+	return (buy(timestamp, prices)*max(0.,imported_energy) ### buy/sell price -> adapter aux tarifs ...
+		- sell(timestamp, prices)*max(0.,-imported_energy))
 end
 
 function online_dynamics(model::AbstractModel, time::Int64, state::Array{Float64,1}, 
@@ -103,4 +105,26 @@ function online_dynamics(model::SdpAR, time::Int64, state::Array{Float64,1},
 
 	return [soc, new_lag, state[2:end-1]...]
 
+end
+
+function buy(timestamp::Dates.DateTime, price::Price)
+	timing = Dates.Time(timestamp)
+	prices = price.price_buy[price.price_buy.timing .== timing, :]
+	weekday = Dates.dayofweek(timestamp)
+	if weekday > 5
+		return prices[:weekend][1]
+	else 
+		return prices[:weekday][1]
+	end
+end
+
+function sell(timestamp::Dates.DateTime, price::Price)
+	timing = Dates.Time(timestamp)
+	prices = price.price_sell[price.price_sell.timing .== timing, :]
+	weekday = Dates.dayofweek(timestamp)
+	if weekday > 5
+		return prices[:weekend][1]
+	else 
+		return prices[:weekday][1]
+	end
 end
