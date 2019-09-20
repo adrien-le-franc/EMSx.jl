@@ -1,2 +1,2 @@
-SiteId,Battery_1_Capacity,Battery_1_Power,Battery_1_Charge_Efficiency,Battery_1_Discharge_Efficiency,Battery_2_Capacity,Battery_2_Power,Battery_2_Charge_Efficiency,Battery_2_Discharge_Efficiency
-1,300,75.0,0.95,0.95,600,150,0.95,0.95
+site_id,max_load,capacity,power,charge_efficiency,discharge_efficiency
+1,186.51349133033932,300,75,0.95,0.95

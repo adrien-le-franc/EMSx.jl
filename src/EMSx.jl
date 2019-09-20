@@ -3,7 +3,7 @@ module EMSx
 using ProgressMeter, ArgParse
 using Dates, CSV, DataFrames, JLD
 using Clustering, LinearAlgebra
-using Clp, CPLEX
+#using Clp, CPLEX
 using StoOpt 
 
 import JuMP
@@ -17,13 +17,14 @@ include("models.jl")
 
 export initiate_model
 
-include("utils.jl")
+#include("utils.jl")
+include("function.jl")
 
 export save_time
 
-include("parser.jl")
+#include("parser.jl")
 
-export load_sites
+#export load_sites
 
 include("arguments.jl")
 

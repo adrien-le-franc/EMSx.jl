@@ -270,8 +270,10 @@ end
 mutable struct MPC <: RollingHorizonModel
 
     model::Model
+
     cost_parameters::Dict{String,Any}
     dynamics_parameters::Dict{String,Any}
+
     horizon::Int64
     prices::Price
 
@@ -385,11 +387,11 @@ end
 struct DummyModel <: AbstractModel
         cost_parameters::Dict{String,Any}
         dynamics_parameters::Dict{String,Any}
-        prices::Price
+        #prices::Price
 end
 
-initiate_DummyModel() = DummyModel(Dict(), Dict(), 
-    Price(CSV.read("/home/data/schneider/emsx/all/prices/edf.csv")))
+initiate_DummyModel() = DummyModel(Dict(), Dict())
+    #Price(CSV.read("/home/data/schneider/emsx/all/prices/edf.csv")))
 
 StoOpt.compute_control(m::DummyModel, cost::Function, dynamics::Function, 
         t::Int64, state::Array{Float64,1}, noise::Nothing, value_functions::Nothing) = [0.0]
