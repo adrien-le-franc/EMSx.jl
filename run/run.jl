@@ -11,23 +11,24 @@ function main()
 
 	#check_arguments(args)
 
-	sites = EMSx.load_sites(args["metadata"], args["test"])
+	sites = EMSx.load_sites(args["metadata"], args["test"], args["save"])
 	prices = EMSx.load_prices(args["prices"])
 
 
 
-	model = initiate_model(args["%COMMAND%"], args[args["%COMMAND%"]])
-	paths = Paths(args["train"], args["test"], args["save"])
+	model = EMSx.DummyController() #initiate_model(args["%COMMAND%"], args[args["%COMMAND%"]])
+
+	#paths = Paths(args["train"], args["test"], args["save"])
 
 	elapsed = 0.0
 
 	for site in sites
 		
-		elapsed += @elapsed simulate_site(model, site, paths) 
+		elapsed += @elapsed simulate_site(model, site, prices) 
 
 	end
 
-	save_time(paths.save, elapsed)
+	save_time(args["save"], elapsed)
 
 end
 

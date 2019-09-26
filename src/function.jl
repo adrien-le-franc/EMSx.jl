@@ -3,14 +3,15 @@
 # simulation script for micro grid control
 
 
-function load_sites(path_to_metadata_csv::String, path_to_data_folder::String)
+function load_sites(path_to_metadata_csv::String, path_to_data_folder::String, 
+	path_to_save_jld_file::String)
 
     sites = Site[]
     metadata = CSV.read(path_to_metadata_csv)
     number_of_sites = size(metadata, 1)
 
     for row in 1:number_of_sites
-        site = Site(metadata, row, path_to_data_folder)
+        site = Site(metadata, row, path_to_data_folder, path_to_save_jld_file)
         push!(sites, site)
     end
 
@@ -31,7 +32,7 @@ end
 
 function load_prices(path_to_prices::String)
 
-	prices = Dict()
+	prices = Dict{String,DataFrame}()
 
 	if !isdir(path_to_prices)
 		name = split(split(path_to_prices, "/")[end], ".")[1]
@@ -47,34 +48,43 @@ function load_prices(path_to_prices::String)
 
 end
 
-function stage_cost(price::DataFrame, t::Int64, control::Array{Float64,1}, net_energy_demand::Arra{Float64,1})
+function compute_stage_cost(battery::Battery, price::DataFrame, t::Int64, 
+	control::Float64, net_energy_demand::Float64)
 
 	control = control*battery.power*0.25
-	imported_energy = (control + net_energy_demand)[1]
-	timestamp = scenario.data[t, :timestamp]
-	prices = scenario.model.prices
-	return (buy(timestamp, prices)*max(0.,imported_energy) ### buy/sell price -> adapter aux tarifs ...
-		- sell(timestamp, prices)*max(0.,-imported_energy))
+	imported_energy = (control + net_energy_demand)
+	return (price[t, :buy]*max(0.,imported_energy) 
+		- price[t, :sell]*max(0.,-imported_energy))
 
 end
 
-function stage_dynamics(state::Array{Float64,1}, control::Array{Float64,1}, battery::Battery)
+function compute_stage_dynamics(battery::Battery, state::Float64, control::Float64)
 
 	scale_factor = battery.power*0.25/battery.capacity
+	soc = state + (battery.charge_efficiency*max(0.,control) 
+		- max(0.,-control)/battery.discharge_efficiency)*scale_factor
+	soc = max(0., min(1., soc)) 
+	return soc
 
-	soc = state + (battery.charge_efficiency*max.(0.,control) 
-		- max.(0.,-control)/battery.discharge_efficiency)*scale_factor
+end
 
-	soc = max(0., min(1., soc[1])) ## MPC ?
+function save_simulations(site::Site, simulations::Array{Simulation})
+	file = Dict()
+	try file = load(site.path_to_save_jld_file)
+	catch error
+	end
+	file[site.id] = simulations
+	save(site.path_to_save_jld_file, file)
+end
 
-	return [soc]
-
+function save_time(path_to_jld, elapsed::Float64)
+	file = load(path_to_jld)
+	file["time"] = elapsed
+	save(path_to_jld, file)
 end
 
 ### hackable functions
 
-function compute_control(controller::AbstractController, information::Float64, t::Int64)
-
-	return [0.] 
-
+function compute_control(controller::AbstractController, information::Information)
+	return 0. 
 end

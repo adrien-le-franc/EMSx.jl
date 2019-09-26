@@ -3,13 +3,10 @@
 # struct for EMS simulation
 
 
-struct Paths
-	train_data::String
-	test_data::String
-	save::String
-end
-
 abstract type AbstractController end
+
+mutable struct DummyController <: AbstractController
+end
 
 
 mutable struct Result
@@ -17,9 +14,7 @@ mutable struct Result
 	soc::Array{Float64,1}
 end
 
-Base.:(==)(r1::Result, r2::Result) = (r1.cost == r2.cost && r1.soc == r2.soc)
-
-Result(h::Int64) = Result(zeros(h), zeros(h)) # mutable struct ???
+Result(h::Int64) = Result(zeros(h), zeros(h))
 
 
 struct Id
@@ -32,17 +27,9 @@ end
 
 struct Simulation
 	result::Result
+	timer::Array{Float64,1}
 	id::Id
 end
-
-Simulation(h::Int64) = Simulation(Result(zeros(h), zeros(h)), Id("", "", "", ""))
-Base.:(==)(s1::Simulation, s2::Simulation) = (s1.result == s2.result && s1.id == s2.id)
-
-
-
-
-
-
 
 
 struct Battery
@@ -57,27 +44,19 @@ struct Site
 	id::String
 	battery::Battery
 	path_to_data_csv::String
+	path_to_save_jld_file::String
 end
 
-function Site(data::DataFrame, row::Int64, path_to_data_folder::String)
+function Site(data::DataFrame, row::Int64, path_to_data_folder::String, 
+	path_to_save_jld_file::String)
 
 	id = string(data[row, :site_id])
 	battery = Battery([float(x) for x in data[row, 3:end]]...)
 	path_to_data_csv = path_to_data_folder*"/"*id*".csv"
 
-	return Site(id, battery, path_to_data_csv)
+	return Site(id, battery, path_to_data_csv, path_to_save_jld_file)
 	
 end
-
-
-
-
-
-
-
-
-
-
 
 
 mutable struct Period 
@@ -88,49 +67,24 @@ mutable struct Period
 end
 
 
-mutable struct Scenario
-	site_id::String
-	period_id::String
-	battery::Battery
-	data::DataFrame
-	model::AbstractModel
-	paths::Paths
+struct Information
+	t::Int64
+	soc::Float64
+	pv::Array{Float64,1}
+	forecast_pv::Array{Float64,1}
+	load::Array{Float64,1}
+	forecast_load::Array{Float64,1}
+	price::DataFrame
 end
 
-Id(s::Scenario) = Id(s.site_id, s.period_id, s.battery.id, typeof(s.model))
+function Information(t::Int64, price::DataFrame, period::Period, soc::Float64)
 
+	data = period.data[t+1:t+96, :]
+	pv = data[:actual_pv]
+	forecast_pv = data[end, 6:101]
+	load = data[:actual_consumption]
+	forecast_load = data[end, 102:197]
 
-
-
-
-
-struct Price
-	price_buy::DataFrame
-	price_sell::DataFrame
-end
-
-function Price(prices::DataFrame)
-
-
-
-
-
-	price_buy = DataFrame(timing=collect(Dates.Time(0, 0, 0):Dates.Minute(15):Dates.Time(23, 45, 0)))
-	price_buy[:weekday] = prices[:buy]
-	if Symbol("buy_weekend") in names(prices)
-		price_buy[:weekend] = prices[:buy_weekend]
-	else
-		price_buy[:weekend] = prices[:buy]
-	end
-
-	price_sell = DataFrame(timing=collect(Dates.Time(0, 0, 0):Dates.Minute(15):Dates.Time(23, 45, 0)))
-	price_sell[:weekday] = prices[:sell]
-	if Symbol("sell_weekend") in names(prices)
-		price_sell[:weekend] = prices[:sell_weekend]
-	else
-		price_sell[:weekend] = prices[:sell]
-	end
-
-	return Price(price_buy, price_sell)
+	return Information(t, soc, pv, forecast_pv, load, forecast_load, price)
 
 end

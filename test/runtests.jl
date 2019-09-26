@@ -3,7 +3,6 @@
 # tests for EMSx package
 
 using EMSx, CSV, Test
-using StoOpt
 
 current_directory = @__DIR__
 
@@ -15,36 +14,22 @@ end
 
 @testset "EMS simulator's body" begin
 	
-	model = EMSx.DummyModel(Dict(), Dict()) #, EMSx.Price(CSV.read(current_directory*"/data/prices_edf.csv")))
-
-	site = EMSx.load_sites(current_directory*"/data/metadata.csv", current_directory*"/data/1.csv")[1]
-	price = EMSx.load_prices(current_directory*"/data/prices_edf.csv")
-
-
-
-	paths = Paths("", current_directory*"/data", current_directory*"/tmp/test.jld")
-
-
-
-	period = EMSx.Period("1", CSV.read(current_directory*"/data/1.csv"), site, EMSx.Simulation[])
-	scenario = EMSx.Scenario(site.id, period.id, site.battery, period.data, model, paths)
-
-	EMSx.online_cost(m::AbstractModel, time::Int64, state::Array{Float64,1}, control::Array{Float64,1},
-	noise::Array{Float64,1}) = 0.0
-	EMSx.online_dynamics(m::AbstractModel, time::Int64, state::Array{Float64,1}, 
-		control::Array{Float64,1}, noise::Array{Float64,1}) = [0.0]
-
-
-
-
-
-	@test EMSx.simulate_scenario(scenario) == EMSx.Simulation(EMSx.Result(zeros(10), zeros(10)), 
-		EMSx.Id(scenario))
-	@test EMSx.simulate_period!(model, period, paths) == nothing
-	@test simulate_site(model, site, paths) == nothing
-
-
-
+	controller = EMSx.DummyController()
+	price = EMSx.load_prices(current_directory*"/data/edf_prices.csv")["edf_prices"]
+	site = EMSx.load_sites(current_directory*"/data/metadata.csv", current_directory*"/data", 
+		current_directory*"/tmp/test.jld")[1]
+	period = EMSx.Period("1", CSV.read(site.path_to_data_csv), site, EMSx.Simulation[])
+	
+	net_demand = period.data[98, :actual_consumption] - period.data[98, :actual_pv]
+	@test EMSx.apply_control(1, 672, price, period, 0., 0.) == (net_demand*price[1, :buy], 0.)
+	simulation =  EMSx.simulate_scenario(controller, period, "edf_prices", price)
+	@test simulation.result.soc == zeros(672)
+	@test EMSx.simulate_period!(controller, period, Dict("edf_prices"=>price)) == nothing
+	@test EMSx.simulate_site(controller, site, Dict("edf_prices"=>price)) == nothing
+	@test EMSx.simulate_sites(controller, current_directory*"/tmp/test.jld", 
+		current_directory*"/data/edf_prices.csv",
+		current_directory*"/data/metadata.csv",
+		current_directory*"/data") == nothing
 
 end
 

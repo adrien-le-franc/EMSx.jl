@@ -1,4 +1,4 @@
 /jobs
-/data
-/results
+/data/*
+/results/*
 Manifest.toml

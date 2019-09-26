@@ -3,137 +3,107 @@
 # functions to simulate EMS 
 
 
-function simulate_site(model::AbstractModel, site::Site, 
-	prices::Dict{String, DataFrame})
-
-	test_data = CSV.read(site.path_to_data_csv)
+simulate_directory = @__DIR__
 
 
-	#train_noises = load_train_data!(model, site, paths)
+function simulate_sites(controller::AbstractController, path_to_save_jld_file::String, 
+	path_to_price_folder::String=simulate_directory*"../data/prices", 
+	path_to_metadata_csv_file::String=simulate_directory*"../data/metadata.csv", 
+	path_to_test_data_folder::String=simulate_directory*"../data/test")
 
-	periods = unique(test_data[:period_id])
-	
-	simulations = Simulation[]
+	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_jld_file)
+	prices = load_prices(path_to_price_folder)
+	elapsed = 0.0
 
-	@showprogress for period_id in periods
-
-		test_data_period = test_data[test_data.period_id .== period_id, :]
-
-		### ?
-
-		period = Period(string(period_id), test_data_period, site, Simulation[])
-
-
-
-		#update_period!(model, period, train_noises)
-
-		simulate_period!(model, period, prices)
-
-		append!(simulations, period.simulations)
+	for site in sites
+		
+		elapsed += @elapsed simulate_site(controller, site, prices) 
 
 	end
 
-	save_simulations(paths.save, site.id, simulations)
-
-	return nothing 
-
-end
-
-function simulate_period!(model::AbstractModel, period::Period, prices::Dict{String, DataFrame})
-
-	battery = period.site.battery
-
-	#update_battery!(model, battery)
-
-	for (price_name, price) in prices
-
-		#scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
-
-		simulation = simulate_scenario(model, period, price_name, price)
-		push!(period.simulations, simulation)
-
-	end
-
-	"""
-	for battery in period.site.batteries
-
-		update_battery!(model, battery)
-		scenario = Scenario(period.site.id, period.id, battery, period.data, model, paths)
-		simulation = simulate_scenario(scenario)
-		push!(period.simulations, simulation)
-
-	end
-	"""
+	save_time(path_to_save_jld_file, elapsed)
 
 	return nothing
 
 end
 
-"""
-function simulate_scenario(scenario::Scenario)
+function simulate_site(controller::AbstractController, site::Site, 
+	prices::Dict{String, DataFrame})
 
-	value_functions = offline_step(scenario)
-	simulation = online_step(scenario, value_functions)
+	test_data = CSV.read(site.path_to_data_csv)
+	periods = unique(test_data[!, :period_id])
+	simulations = Simulation[]
 
-	return simulation
+	@showprogress for period_id in periods
 
-end
+		test_data_period = test_data[test_data.period_id .== period_id, :]
+		period = Period(string(period_id), test_data_period, site, Simulation[])
+		simulate_period!(controller, period, prices)
+		append!(simulations, period.simulations)
 
-function offline_step(scenario::Scenario)
-
-	model = scenario.model
-
-	if ! (typeof(model) <: DynamicProgrammingModel)
-		return nothing
-	else
-		return StoOpt.compute_value_functions(model, cost, dynamics)
 	end
 
-end
-"""
+	save_simulations(site, simulations)
 
-function simulate_scenario(model::AbstractModel, period::Period, price_name::String, 
+	return nothing 
+
+end
+
+function simulate_period!(controller::AbstractController, period::Period, prices::Dict{String, DataFrame})
+
+	battery = period.site.battery
+
+	for (price_name, price) in prices
+
+		simulation = simulate_scenario(controller, period, price_name, price)
+		push!(period.simulations, simulation)
+
+	end
+
+	return nothing
+
+end
+
+function simulate_scenario(controller::AbstractController, period::Period, price_name::String, 
 	price::DataFrame) 
 
-	state = initiate_state(model)
-	horizon = size(period.data, 1) ## change ?? -> 8 days for week + history
-	id = Id(period.site.id, period.id, price_name, typeof(model))
-
-	simulation = Simulation(Result(zeros(horizon), zeros(horizon)), id)
-
+	horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period
+	id = Id(period.site.id, period.id, price_name, typeof(controller))
+	state_of_charge = 0.
 	result = Result(horizon)
+	timer = zeros(horizon)
 
-	for t in 1:horizon ## change ?? -> 8 days for week + history
+	for t in 1:horizon 
 
-		#noise = online_information!(scenario.model, scenario.data, state, t)
-		information = 0. #f(...? state ? data ? ...)
-		control = compute_control(model, information, t)
+		information = Information(t, price, period, state_of_charge)
+		timing = @elapsed control = compute_control(controller, information)
 
-
-		#control = StoOpt.compute_control(scenario.model, cost, dynamics, t, state, noise, 
-		#	value_functions)
-
-
-		stage_cost, state = apply_control(period, t, state, control, price)
+		stage_cost, state_of_charge = apply_control(t, horizon, price, period, state_of_charge, control)
 		result.cost[t] = stage_cost
-		result.soc[t] = state_of_charge(scenario.model, state)
+		result.soc[t] = state_of_charge
+		timer[t] = timing
 
 	end
 
-	return simulation
+	return Simulation(result, timer, id)
 
 end
 
-function apply_control(period::Period, t::Int64, state::Array{Float64,1}, 
-	control::Array{Float64,1}, price::DataFrame)
+function apply_control(t::Int64, horizon::Int64, price::DataFrame, period::Period, soc::Float64, 
+	control::Float64)
+	"""
+	note on the load and pv values:
+	at the end of the period value at t+1 cannot be accessed, is replaced by value at t=horizon
+	with a minor impact since the optimal control is to empty the battery anyway
+	"""
+	
+	load = period.data[:actual_consumption][min(t+96+1, horizon+96)]
+	pv = period.data[:actual_pv][min(t+96+1, horizon+96)] 
+	net_energy_demand = load-pv
 
-	load = period.data[:actual_consumption][t] 
-	pv = period.data[:actual_pv][t] 
-	net_energy_demand = [load-pv]
+	stage_cost = compute_stage_cost(period.site.battery, price, t, control, net_energy_demand)
+	new_state_of_charge = compute_stage_dynamics(period.site.battery, soc, control)
 
-	stage_cost = stage_cost(price, t, control, net_energy_demand)
-	new_state = stage_dynamics(period.site.battery, state, control)
-
-	return stage_cost, new_state
+	return stage_cost, new_state_of_charge
 
 end
