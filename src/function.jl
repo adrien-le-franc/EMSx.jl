@@ -40,7 +40,7 @@ function load_prices(path_to_prices::String)
 	else
 		for file in readdir(path_to_prices)
 			name = split(split(path_to_prices, "/")[end], ".")[1]
-			prices[name] = load_prices_csv(file)
+			prices[name] = load_prices_csv(joinpath(path_to_prices, file))
 		end
 	end
 

@@ -3,13 +3,13 @@
 # functions to simulate EMS 
 
 
-simulate_directory = @__DIR__
+default_data_folder = joinpath(@__DIR__, "../data")
 
 
 function simulate_sites(controller::AbstractController, path_to_save_jld_file::String, 
-	path_to_price_folder::String=simulate_directory*"../data/prices", 
-	path_to_metadata_csv_file::String=simulate_directory*"../data/metadata.csv", 
-	path_to_test_data_folder::String=simulate_directory*"../data/test")
+	path_to_price_folder::String=joinpath(default_data_folder, "prices"), 
+	path_to_metadata_csv_file::String=joinpath(default_data_folder, "metadata.csv"), 
+	path_to_test_data_folder::String=joinpath(default_data_folder, "test"))
 
 	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_jld_file)
 	prices = load_prices(path_to_price_folder)
@@ -93,7 +93,7 @@ function apply_control(t::Int64, horizon::Int64, price::DataFrame, period::Perio
 	control::Float64)
 	"""
 	note on the load and pv values:
-	at the end of the period value at t+1 cannot be accessed, is replaced by value at t=horizon
+	at the end of the period values at t+1 cannot be accessed, replaced by values at t=horizon
 	with a minor impact since the optimal control is to empty the battery anyway
 	"""
 	
