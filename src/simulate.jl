@@ -6,7 +6,7 @@
 default_data_folder = joinpath(@__DIR__, "../data")
 
 
-function simulate_sites(controller::AbstractController, path_to_save_jld_file::String, 
+function simulate_sites(controller::AbstractController, path_to_save_jld_file::String; 
 	path_to_price_folder::String=joinpath(default_data_folder, "prices"), 
 	path_to_metadata_csv_file::String=joinpath(default_data_folder, "metadata.csv"), 
 	path_to_test_data_folder::String=joinpath(default_data_folder, "test"))
@@ -31,7 +31,7 @@ function simulate_site(controller::AbstractController, site::Site,
 	prices::Dict{String, DataFrame})
 
 	test_data = CSV.read(site.path_to_data_csv)
-	periods = unique(test_data[!, :period_id])
+	periods = unique(test_data[:period_id])
 	simulations = Simulation[]
 
 	@showprogress for period_id in periods

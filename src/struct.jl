@@ -69,22 +69,23 @@ end
 
 struct Information
 	t::Int64
-	soc::Float64
+	soc::Float64 
 	pv::Array{Float64,1}
 	forecast_pv::Array{Float64,1}
 	load::Array{Float64,1}
 	forecast_load::Array{Float64,1}
 	price::DataFrame
+	battery::Battery
 end
 
 function Information(t::Int64, price::DataFrame, period::Period, soc::Float64)
 
 	data = period.data[t+1:t+96, :]
 	pv = data[:actual_pv]
-	forecast_pv = data[end, 6:101]
+	forecast_pv = data[end, 102:197]
 	load = data[:actual_consumption]
-	forecast_load = data[end, 102:197]
+	forecast_load = data[end, 6:101]
 
-	return Information(t, soc, pv, forecast_pv, load, forecast_load, price)
+	return Information(t, soc, pv, forecast_pv, load, forecast_load, price, period.site.battery)
 
 end
