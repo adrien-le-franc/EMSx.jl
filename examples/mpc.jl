@@ -10,11 +10,12 @@
 
 
 using EMSx
-using DataFrames
 using JuMP, CPLEX
 
+include("arguments.jl")
 
-save_folder = joinpath(@__DIR__, "../results")
+
+args = parse_commandline()
 
 
 mutable struct Mpc <: EMSx.AbstractController
@@ -45,6 +46,8 @@ horizon = 96
 @constraint(mpc, x[1] == x0)
 @constraint(mpc, dynamics, diff(x) .== u_c .- u_d)
 
+const controller = Mpc(mpc, horizon)
+
 function EMSx.compute_control(mpc::Mpc, information::EMSx.Information)
 
 	fix(mpc.model[:x0], information.soc*information.battery.capacity)
@@ -57,15 +60,18 @@ function EMSx.compute_control(mpc::Mpc, information::EMSx.Information)
 		1/information.battery.discharge_efficiency)
 
 	# set prices, padding out of test period prices with zero values
-	price_window = information.t:min(information.t+mpc.horizon-1, size(information.price, 1))
-	price = information.price[price_window, [:buy, :sell]]
-	if size(price, 1) != mpc.horizon
-		padding = mpc.horizon - size(price, 1)
-		price = vcat(price, DataFrame(buy=zeros(padding), sell=zeros(padding)))
+	price = information.price
+	price_window = information.t:min(information.t+mpc.horizon-1, size(price.buy, 1))
+	if length(price_window) != mpc.horizon
+		padding = mpc.horizon - length(price_window)
+		price = EMSx.Price(price.name, vcat(price.buy[price_window], zeros(padding)), 
+			vcat(price.sell[price_window], zeros(padding)))
+	else
+		price = EMSx.Price(price.name, price.buy[price_window], price.sell[price_window])
 	end
 
 	@objective(mpc.model, Min, 
-		sum(price[:buy].*mpc.model[:z]-price[:sell].*(mpc.model[:z]-mpc.model[:u]-mpc.model[:w])))
+		sum(price.buy.*mpc.model[:z]-price.sell.*(mpc.model[:z]-mpc.model[:u]-mpc.model[:w])))
 
 	optimize!(mpc.model)
 
@@ -73,6 +79,8 @@ function EMSx.compute_control(mpc::Mpc, information::EMSx.Information)
 
 end
 
-controller = Mpc(mpc, horizon)
-EMSx.simulate_sites(controller, joinpath(save_folder, "mpc.jld"), 
-	path_to_metadata_csv_file=joinpath(save_folder, "../data/sample.csv"))
+EMSx.simulate_sites(controller, 
+	joinpath(args["save"], "mpc.jld"), 
+	args["price"], 
+	args["metadata"], 
+	args["test"])

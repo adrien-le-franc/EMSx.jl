@@ -5,7 +5,15 @@
 
 using EMSx
 
-save_folder = joinpath(@__DIR__, "../results")
+include("arguments.jl")
 
-controller = EMSx.DummyController()
-EMSx.simulate_sites(controller, joinpath(save_folder, "dummy.jld"))
+
+args = parse_commandline()
+
+const controller = EMSx.DummyController()
+
+EMSx.simulate_sites(controller,
+	joinpath(args["save"], "dummy.jld"),
+	args["price"],
+	args["metadata"],
+	args["test"])

@@ -3,13 +3,11 @@
 # functions to simulate EMS 
 
 
-default_data_folder = joinpath(@__DIR__, "../data")
-
-
-function simulate_sites(controller::AbstractController, path_to_save_jld_file::String; 
-	path_to_price_folder::String=joinpath(default_data_folder, "prices"), 
-	path_to_metadata_csv_file::String=joinpath(default_data_folder, "metadata.csv"), 
-	path_to_test_data_folder::String=joinpath(default_data_folder, "test"))
+function simulate_sites(controller::AbstractController, 
+	path_to_save_jld_file::String,
+	path_to_price_folder::String, 
+	path_to_metadata_csv_file::String, 
+	path_to_test_data_folder::String)
 
 	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_jld_file)
 	prices = load_prices(path_to_price_folder)
@@ -28,7 +26,7 @@ function simulate_sites(controller::AbstractController, path_to_save_jld_file::S
 end
 
 function simulate_site(controller::AbstractController, site::Site, 
-	prices::Dict{String, DataFrame})
+	prices::Array{Price})
 
 	test_data = CSV.read(site.path_to_data_csv)
 	periods = unique(test_data[:period_id])
@@ -49,13 +47,13 @@ function simulate_site(controller::AbstractController, site::Site,
 
 end
 
-function simulate_period!(controller::AbstractController, period::Period, prices::Dict{String, DataFrame})
+function simulate_period!(controller::AbstractController, period::Period, prices::Array{Price})
 
 	battery = period.site.battery
 
-	for (price_name, price) in prices
+	for price in prices
 
-		simulation = simulate_scenario(controller, period, price_name, price)
+		simulation = simulate_scenario(controller, period, price)
 		push!(period.simulations, simulation)
 
 	end
@@ -64,11 +62,10 @@ function simulate_period!(controller::AbstractController, period::Period, prices
 
 end
 
-function simulate_scenario(controller::AbstractController, period::Period, price_name::String, 
-	price::DataFrame) 
+function simulate_scenario(controller::AbstractController, period::Period, price::Price) 
 
-	horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period
-	id = Id(period.site.id, period.id, price_name, typeof(controller))
+	horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period 
+	id = Id(period.site.id, period.id, price.name, string(typeof(controller)))
 	state_of_charge = 0.
 	result = Result(horizon)
 	timer = zeros(horizon)
@@ -89,7 +86,7 @@ function simulate_scenario(controller::AbstractController, period::Period, price
 
 end
 
-function apply_control(t::Int64, horizon::Int64, price::DataFrame, period::Period, soc::Float64, 
+function apply_control(t::Int64, horizon::Int64, price::Price, period::Period, soc::Float64, 
 	control::Float64)
 	"""
 	note on the load and pv values:
