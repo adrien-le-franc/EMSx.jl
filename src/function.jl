@@ -1,6 +1,6 @@
 # developed with Julia 1.1.1
 #
-# simulation script for micro grid control
+# functions for simulating micro grid control
 
 
 function load_sites(path_to_metadata_csv::String, path_to_data_folder::String, 

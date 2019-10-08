@@ -1,15 +1,31 @@
 # developed with Julia 1.1.1
+#
+# functions for calibrating models for microgrid control
+# models are  computed with a package available at 
+# https://github.com/adrien-le-franc/StoOpt.jl
 
 
-using DataFrames, Dates
-using JLD
+using StoOpt
+
+using CSV, DataFrames, Dates
 using Clustering
+
+
+## Generic data parsing functions
 
 
 is_week_end(date::Dates.Date) = Dates.dayofweek(date) in [6, 7]
 
-function compute_offline_law(data::DataFrame; k=10)
+function compute_offline_law(path_to_data_csv::String; k=10)
 
+    """
+    parse offline data to return a Dict of DataFrame objects with columns
+    :timestamp -> Dates.Time ; one day discretized at 15 min steps
+    :value -> Array{Float64,1} ; scalar values of a stochastic process
+    :probability -> Arra{Float64,1} ; probabilities of each scalar value
+    """
+
+    data = CSV.read(path_to_data_csv)
     sorted_data = parse_data_frame(data)
     offline_law_data_frames = data_to_offline_law(sorted_data, k)
 
@@ -79,11 +95,25 @@ function data_to_offline_law(data::Dict{String, Dict{Any, Any}},
 
 end
 
-function save_model(x, site_id::String, path_to_save_jld_file::String)
-    file = Dict()
-    try file = load(path_to_save_jld_file)
-    catch error
-    end
-    file[site_id] = x
-    save(path_to_save_jld_file, file)
+
+## StoOpt specific data parsing function
+## enables connecting the generic offline data pipeline
+## with the StoOpt package
+
+
+function data_frames_to_noises(path_to_data_csv::String)
+
+    offline_law = compute_offline_law(path_to_data_csv)
+
+    w_week_day = hcat(offline_law["week_day"][:value]...)'
+    pw_week_day = hcat(offline_law["week_day"][:probability]...)'
+    w_week_end = hcat(offline_law["week_end"][:value]...)'
+    pw_week_end = hcat(offline_law["week_end"][:probability]...)'
+
+    # one-week-long stochastic process
+    w = vcat([w_week_day for i in 1:5]..., [w_week_end for i in 1:2]...)
+    pw = vcat([pw_week_day for i in 1:5]..., [pw_week_end for i in 1:2]...)
+
+    return StoOpt.Noises(w, pw)
+
 end
