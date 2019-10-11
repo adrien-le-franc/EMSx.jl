@@ -4,12 +4,12 @@
 
 
 function simulate_sites(controller::AbstractController, 
-	path_to_save_jld_file::String,
+	path_to_save_folder::String,
 	path_to_price_folder::String, 
 	path_to_metadata_csv_file::String, 
 	path_to_test_data_folder::String)
-
-	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_jld_file)
+	
+	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_folder)
 	prices = load_prices(path_to_price_folder)
 	elapsed = 0.0
 
@@ -19,7 +19,7 @@ function simulate_sites(controller::AbstractController,
 
 	end
 
-	save_time(path_to_save_jld_file, elapsed)
+	save_time(path_to_save_folder, elapsed)
 
 	return nothing
 

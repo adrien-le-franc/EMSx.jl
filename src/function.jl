@@ -4,18 +4,14 @@
 
 
 function load_sites(path_to_metadata_csv::String, path_to_data_folder::String, 
-	path_to_save_jld_file::Union{String, Array{String}})
+	path_to_save_folder::String)
 
     sites = Site[]
     metadata = CSV.read(path_to_metadata_csv)
     number_of_sites = size(metadata, 1)
 
     for row in 1:number_of_sites
-    	if typeof(path_to_save_jld_file) == String
-        	site = Site(metadata, row, path_to_data_folder, path_to_save_jld_file)
-        else
-        	site = Site(metadata, row, path_to_data_folder, path_to_save_jld_file[row])
-        end
+        site = Site(metadata, row, path_to_data_folder, path_to_save_folder)
         push!(sites, site)
     end
 
@@ -76,17 +72,17 @@ end
 
 function save_simulations(site::Site, simulations::Array{Simulation})
 	file = Dict()
-	try file = load(site.path_to_save_jld_file)
+	try file = load(joinpath(site.path_to_save_folder, "score.jld"))
 	catch error
 	end
 	file[site.id] = simulations
-	save(site.path_to_save_jld_file, file)
+	save(joinpath(site.path_to_save_folder, "score.jld"), file)
 end
 
-function save_time(path_to_jld, elapsed::Float64)
-	file = load(path_to_jld)
+function save_time(path_to_save_folder, elapsed::Float64)
+	file = load(joinpath(path_to_save_folder, "score.jld"))
 	file["time"] = elapsed
-	save(path_to_jld, file)
+	save(joinpath(path_to_save_folder, "score.jld"), file)
 end
 
 ### hackable functions

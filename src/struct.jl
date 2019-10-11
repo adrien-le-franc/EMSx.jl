@@ -44,7 +44,7 @@ struct Site
 	id::String
 	battery::Battery
 	path_to_data_csv::String
-	path_to_save_jld_file::String
+	path_to_save_folder::String
 end
 
 function Site(data::DataFrame, row::Int64, path_to_data_folder::String, 
@@ -88,7 +88,7 @@ end
 
 function Information(t::Int64, price::Price, period::Period, soc::Float64)
 
-	data = period.data[t+1:t+96, :]
+	data = sort!(period.data[t+1:t+96, :], rev=true)
 	pv = data[:actual_pv]
 	forecast_pv = data[end, 102:197]
 	load = data[:actual_consumption]
