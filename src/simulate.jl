@@ -9,6 +9,7 @@ function simulate_sites(controller::AbstractController,
 	path_to_metadata_csv_file::String, 
 	path_to_test_data_folder::String)
 	
+	make_directory(path_to_save_folder)
 	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_folder)
 	prices = load_prices(path_to_price_folder)
 	elapsed = 0.0
@@ -19,7 +20,7 @@ function simulate_sites(controller::AbstractController,
 
 	end
 
-	save_time(path_to_save_folder, elapsed)
+	println("Terminating model simulation in $(elapsed) seconds")
 
 	return nothing
 
@@ -27,6 +28,8 @@ end
 
 function simulate_site(controller::AbstractController, site::Site, 
 	prices::Array{Price})
+
+	controller = initialize_site_controller(controller, site)
 
 	test_data = CSV.read(site.path_to_data_csv)
 	periods = unique(test_data[:period_id])
@@ -53,6 +56,7 @@ function simulate_period!(controller::AbstractController, period::Period, prices
 
 	for price in prices
 
+		update_price!(controller, price)
 		simulation = simulate_scenario(controller, period, price)
 		push!(period.simulations, simulation)
 

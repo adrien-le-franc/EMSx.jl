@@ -3,6 +3,9 @@
 # functions for simulating micro grid control
 
 
+make_directory(path::String) = if !isdir(path) mkdir(path) end
+
+
 function load_sites(path_to_metadata_csv::String, path_to_data_folder::String, 
 	path_to_save_folder::String)
 
@@ -79,13 +82,15 @@ function save_simulations(site::Site, simulations::Array{Simulation})
 	save(joinpath(site.path_to_save_folder, "score.jld"), file)
 end
 
-function save_time(path_to_save_folder, elapsed::Float64)
-	file = load(joinpath(path_to_save_folder, "score.jld"))
-	file["time"] = elapsed
-	save(joinpath(path_to_save_folder, "score.jld"), file)
+### hackable functions
+
+function initialize_site_controller(controller::AbstractController, site::Site)
+	return DummyController()
 end
 
-### hackable functions
+function update_price!(controller::AbstractController, price::Price)
+	return nothing
+end
 
 function compute_control(controller::AbstractController, information::Information)
 	return 0. 
