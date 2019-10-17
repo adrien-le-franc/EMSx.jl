@@ -37,6 +37,14 @@ function parse_commandline()
             arg_type = String
             default = joinpath(@__DIR__, "../data/prices")
 
+        "--calibrate"
+            help = "perform model calibration - SDP only"
+            action = :store_true
+
+        "--simulate"
+            help = "perform model simulation"
+            action = :store_true
+
     end
 
     parsed_args = parse_args(s)

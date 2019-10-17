@@ -32,7 +32,7 @@ function simulate_site(controller::AbstractController, site::Site,
 	controller = initialize_site_controller(controller, site)
 
 	test_data = CSV.read(site.path_to_data_csv)
-	periods = unique(test_data[:period_id])
+	periods = unique(test_data[!, :period_id])
 	simulations = Simulation[]
 
 	@showprogress for period_id in periods
@@ -98,8 +98,8 @@ function apply_control(t::Int64, horizon::Int64, price::Price, period::Period, s
 	with a minor impact since the optimal control is to empty the battery anyway
 	"""
 	
-	load = period.data[:actual_consumption][min(t+96+1, horizon+96)]
-	pv = period.data[:actual_pv][min(t+96+1, horizon+96)] 
+	load = period.data[! ,:actual_consumption][min(t+96+1, horizon+96)]
+	pv = period.data[!, :actual_pv][min(t+96+1, horizon+96)] 
 	net_energy_demand = load-pv
 
 	stage_cost = compute_stage_cost(period.site.battery, price, t, control, net_energy_demand)

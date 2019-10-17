@@ -3,8 +3,7 @@
 # functions for simulating micro grid control
 
 
-make_directory(path::String) = if !isdir(path) mkdir(path) end
-
+make_directory(path::String) = if !isdir(path) mkpath(path) end
 
 function load_sites(path_to_metadata_csv::String, path_to_data_folder::String, 
 	path_to_save_folder::String)
@@ -28,7 +27,7 @@ function load_prices_csv(path_to_csv::String)
 	if !(names(prices) == [:timestamp, :buy, :sell] && size(prices, 1) == 672)
 		error("price DataFrame at $(path_to_csv) is not in expected shape")
 	end
-	prices[:timestamp] = Dates.Time.(prices[:timestamp])
+	prices[!, :timestamp] = Dates.Time.(prices[!, :timestamp])
 	return prices
 
 end
@@ -40,12 +39,12 @@ function load_prices(path_to_prices::String)
 	if !isdir(path_to_prices)
 		name = split(split(path_to_prices, "/")[end], ".")[1]
 		data_frame = load_prices_csv(path_to_prices)
-		push!(prices, Price(name, data_frame[:buy], data_frame[:sell]))
+		push!(prices, Price(name, data_frame[!, :buy], data_frame[!, :sell]))
 	else
 		for file in readdir(path_to_prices)
 			name = split(split(path_to_prices, "/")[end], ".")[1]
 			data_frame = load_prices_csv(joinpath(path_to_prices, file))
-			push!(prices, Price(name, data_frame[:buy], data_frame[:sell]))	
+			push!(prices, Price(name, data_frame[!, :buy], data_frame[!, :sell]))	
 		end
 	end
 
@@ -85,10 +84,17 @@ end
 ### hackable functions
 
 function initialize_site_controller(controller::AbstractController, site::Site)
+	"""
+	hackable function to update site dependent data and parameters
+	and initialize the controller
+	"""
 	return DummyController()
 end
 
 function update_price!(controller::AbstractController, price::Price)
+	"""
+	hackable function to update price dependent data and parameters
+	"""
 	return nothing
 end
 

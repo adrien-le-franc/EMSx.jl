@@ -89,9 +89,9 @@ end
 function Information(t::Int64, price::Price, period::Period, soc::Float64)
 
 	data = sort!(period.data[t+1:t+96, :], rev=true)
-	pv = data[:actual_pv]
+	pv = data[!, :actual_pv]
 	forecast_pv = data[end, 102:197]
-	load = data[:actual_consumption]
+	load = data[!, :actual_consumption]
 	forecast_load = data[end, 6:101]
 
 	return Information(t, soc, pv, forecast_pv, load, forecast_load, price, period.site.battery, 
