@@ -43,18 +43,29 @@ end
 struct Site
 	id::String
 	battery::Battery
-	path_to_data_csv::String
+	path_to_test_data_csv::Union{String, Nothing}
+	path_to_train_data_csv::Union{String, Nothing}
 	path_to_save_folder::String
 end
 
-function Site(data::DataFrame, row::Int64, path_to_data_folder::String, 
-	path_to_save_jld_file::String)
+function Site(data::DataFrame, row::Int64, path_to_test_data_folder::Union{String, Nothing}, 
+	path_to_train_data_folder::Union{String, Nothing}, path_to_save_jld_file::String)
 
 	id = string(data[row, :site_id])
 	battery = Battery([float(x) for x in data[row, 3:end]]...)
-	path_to_data_csv = path_to_data_folder*"/"*id*".csv"
+	if path_to_test_data_folder != nothing
+		path_to_test_data_csv = path_to_test_data_folder*"/"*id*".csv"
+	else
+		path_to_test_data_csv = nothing
+	end
+	if path_to_train_data_folder != nothing
+		path_to_train_data_csv = path_to_train_data_folder*"/"*id*".csv"
+	else
+		path_to_train_data_csv = nothing
+	end
 
-	return Site(id, battery, path_to_data_csv, path_to_save_jld_file)
+	return Site(id, battery, path_to_test_data_csv, path_to_train_data_csv, 
+		path_to_save_jld_file)
 	
 end
 

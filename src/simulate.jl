@@ -7,11 +7,14 @@ function simulate_sites(controller::AbstractController,
 	path_to_save_folder::String,
 	path_to_price_folder::String, 
 	path_to_metadata_csv_file::String, 
-	path_to_test_data_folder::String)
+	path_to_test_data_folder::String,
+	path_to_train_data_folder::Union{String, Nothing}=nothing)
 	
 	make_directory(path_to_save_folder)
-	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, path_to_save_folder)
 	prices = load_prices(path_to_price_folder)
+	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, 
+		path_to_train_data_folder, path_to_save_folder)
+
 	elapsed = 0.0
 
 	for site in sites
@@ -28,10 +31,9 @@ end
 
 function simulate_site(controller::AbstractController, site::Site, 
 	prices::Array{Price})
-
+	
+	test_data, site = load_site_data(site)
 	controller = initialize_site_controller(controller, site)
-
-	test_data = CSV.read(site.path_to_data_csv)
 	periods = unique(test_data[!, :period_id])
 	simulations = Simulation[]
 

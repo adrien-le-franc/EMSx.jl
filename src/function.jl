@@ -5,15 +5,16 @@
 
 make_directory(path::String) = if !isdir(path) mkpath(path) end
 
-function load_sites(path_to_metadata_csv::String, path_to_data_folder::String, 
-	path_to_save_folder::String)
+function load_sites(path_to_metadata_csv::String, path_to_test_data_folder::Union{String, Nothing},
+	path_to_train_data_folder::Union{String, Nothing}, path_to_save_folder::String)
 
     sites = Site[]
     metadata = CSV.read(path_to_metadata_csv)
     number_of_sites = size(metadata, 1)
 
     for row in 1:number_of_sites
-        site = Site(metadata, row, path_to_data_folder, path_to_save_folder)
+        site = Site(metadata, row, path_to_test_data_folder, 
+        	path_to_train_data_folder, path_to_save_folder)
         push!(sites, site)
     end
 
@@ -50,6 +51,13 @@ function load_prices(path_to_prices::String)
 
 	return prices
 
+end
+
+function load_site_data(site::Site)
+	test_data = CSV.read(site.path_to_test_data_csv)
+	site_hidden_test_data = Site(site.id, site.battery, nothing, 
+		site.path_to_train_data_csv, site.path_to_save_folder)
+	return test_data, site_hidden_test_data
 end
 
 function compute_stage_cost(battery::Battery, price::Price, t::Int64, 

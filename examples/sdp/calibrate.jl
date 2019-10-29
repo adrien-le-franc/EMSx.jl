@@ -17,9 +17,8 @@ function calibrate_sites(controller::EMSx.AbstractController,
 	
 	EMSx.make_directory(joinpath(path_to_save_folder, "value_functions"))
 	prices = EMSx.load_prices(path_to_price_folder)
-	sites = EMSx.load_sites(path_to_metadata_csv_file, 
-		path_to_train_data_folder, 
-		path_to_save_folder)
+	sites = EMSx.load_sites(path_to_metadata_csv_file, nothing,
+		path_to_train_data_folder, path_to_save_folder)
 
 	elapsed = 0.0
 

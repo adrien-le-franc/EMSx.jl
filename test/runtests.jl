@@ -17,8 +17,8 @@ end
 	controller = EMSx.DummyController()
 	price = EMSx.load_prices(current_directory*"/data/edf_prices.csv")[1]
 	site = EMSx.load_sites(current_directory*"/data/metadata.csv", current_directory*"/data", 
-		current_directory*"/tmp/test")[1]
-	period = EMSx.Period("1", CSV.read(site.path_to_data_csv), site, EMSx.Simulation[])
+		nothing, current_directory*"/tmp/test")[1]
+	period = EMSx.Period("1", CSV.read(site.path_to_test_data_csv), site, EMSx.Simulation[])
 	
 	net_demand = period.data[98, :actual_consumption] - period.data[98, :actual_pv]
 	@test EMSx.apply_control(1, 672, price, period, 0., 0.) == (net_demand*price.buy[1], 0.)
