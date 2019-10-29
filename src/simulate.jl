@@ -54,8 +54,6 @@ end
 
 function simulate_period!(controller::AbstractController, period::Period, prices::Array{Price})
 
-	battery = period.site.battery
-
 	for price in prices
 
 		update_price!(controller, price)
