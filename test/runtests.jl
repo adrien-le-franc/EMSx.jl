@@ -2,7 +2,10 @@
 #
 # tests for EMSx package
 
-using EMSx, CSV, Test
+using EMSx
+using CSV
+using Distributed
+using Test
 
 current_directory = @__DIR__
 
@@ -26,12 +29,30 @@ end
 	@test simulation.result.soc == zeros(672)
 	@test EMSx.simulate_period!(controller, period, [price]) == nothing
 	mkdir(current_directory*"/tmp/test")
-	@test EMSx.simulate_site(controller, site, [price]) == nothing
+
+	@test EMSx.simulate_site(controller, site, [price]) == nothing 
 	@test EMSx.simulate_sites(controller, 
 		current_directory*"/tmp/test", 
 		current_directory*"/data/edf_prices.csv",
 		current_directory*"/data/metadata.csv",
-		current_directory*"/data") == nothing
+		current_directory*"/data") == nothing 
+
+	if length(Sys.cpu_info()) > 1
+
+		addprocs(1)
+		@everywhere using EMSx
+
+		@test EMSx.simulate_sites_parallel(controller, 
+			current_directory*"/tmp/test", 
+			current_directory*"/data/edf_prices.csv",
+			current_directory*"/data/metadata.csv",
+			current_directory*"/data") == nothing
+
+		for worker in workers()
+			rmprocs(worker)
+		end
+
+	end
 
 end
 

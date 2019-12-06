@@ -25,10 +25,18 @@ end
 function load_prices_csv(path_to_csv::String)
 
 	prices = CSV.read(path_to_csv)
+
 	if !(names(prices) == [:timestamp, :buy, :sell] && size(prices, 1) == 672)
 		error("price DataFrame at $(path_to_csv) is not in expected shape")
 	end
-	prices[!, :timestamp] = Dates.Time.(prices[!, :timestamp])
+
+	if !(all(isa.(prices[!, :timestamp], Dates.Time)))
+		try prices[!, :timestamp] = Dates.Time.(prices[!, :timestamp])
+		catch error
+			println("could not convert timestamp to Dates.Time")
+		end
+	end
+
 	return prices
 
 end
@@ -81,12 +89,14 @@ function compute_stage_dynamics(battery::Battery, state::Float64, control::Float
 end
 
 function save_simulations(site::Site, simulations::Array{Simulation})
-	file = Dict()
-	try file = load(joinpath(site.path_to_save_folder, "score.jld"))
-	catch error
+	path_to_score = joinpath(site.path_to_save_folder, "score.jld")
+	if isfile(path_to_score)
+		file = load(path_to_score)
+	else
+		file = Dict()
 	end
 	file[site.id] = simulations
-	save(joinpath(site.path_to_save_folder, "score.jld"), file)
+	save(path_to_score, file)
 end
 
 ### hackable functions

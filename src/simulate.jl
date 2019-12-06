@@ -29,6 +29,38 @@ function simulate_sites(controller::AbstractController,
 
 end
 
+function simulate_sites_parallel(controller::EMSx.AbstractController,
+	path_to_save_folder::String, 
+	path_to_price_folder::String, 
+	path_to_metadata_csv_file::String, 
+	path_to_test_data_folder::String,
+	path_to_train_data_folder::Union{String, Nothing}=nothing)
+
+	make_directory(path_to_save_folder)
+	prices = load_prices(path_to_price_folder)
+	sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, 
+		path_to_train_data_folder, path_to_save_folder)
+
+	to_do = length(sites)
+
+	@sync begin 
+		for p in workers()
+			@async begin
+				while true
+					idx = to_do
+					to_do -= 1
+					if idx <= 0
+						break
+					end
+					println("processing a new job - jobs left: $(idx-1) / $(length(sites))")
+					_ = remotecall_fetch(simulate_site, p, controller, sites[idx], prices)
+				end
+			end
+		end
+	end
+
+end
+
 function simulate_site(controller::AbstractController, site::Site, 
 	prices::Array{Price})
 	
@@ -68,7 +100,7 @@ end
 
 function simulate_scenario(controller::AbstractController, period::Period, price::Price) 
 
-	horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period 
+	horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period data
 	id = Id(period.site.id, period.id, price.name, string(typeof(controller)))
 	state_of_charge = 0.
 	result = Result(horizon)

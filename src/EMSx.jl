@@ -1,7 +1,9 @@
 module EMSx
 
 using ProgressMeter 
-using Dates, CSV, DataFrames, JLD
+using Distributed
+using Dates, CSV, DataFrames
+using JLD
 
 include("struct.jl")
 include("function.jl")

@@ -54,12 +54,12 @@ function Site(data::DataFrame, row::Int64, path_to_test_data_folder::Union{Strin
 	id = string(data[row, :site_id])
 	battery = Battery([float(x) for x in data[row, 3:end]]...)
 	if path_to_test_data_folder != nothing
-		path_to_test_data_csv = path_to_test_data_folder*"/"*id*".csv"
+		path_to_test_data_csv = joinpath(path_to_test_data_folder, id*".csv")
 	else
 		path_to_test_data_csv = nothing
 	end
 	if path_to_train_data_folder != nothing
-		path_to_train_data_csv = path_to_train_data_folder*"/"*id*".csv"
+		path_to_train_data_csv = joinpath(path_to_train_data_folder, id*".csv")
 	else
 		path_to_train_data_csv = nothing
 	end
