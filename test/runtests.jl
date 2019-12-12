@@ -56,4 +56,13 @@ end
 
 end
 
+@testset "Data manipulation functions" begin
+
+	@test EMSx.train_test_split(joinpath(current_directory, "data/raw"), 
+		joinpath(current_directory, "data/raw/test_periods.csv")) == nothing
+
+end
+
 rm(current_directory*"/tmp", recursive=true)
+rm(current_directory*"/data/raw/test", recursive=true)
+rm(current_directory*"/data/raw/train", recursive=true)

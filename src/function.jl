@@ -5,6 +5,41 @@
 
 make_directory(path::String) = if !isdir(path) mkpath(path) end
 
+function train_test_split(path_to_data_folder::String, path_to_test_periods_csv::String)
+	"""
+	is to become download_dataset() when data is available on exchange platform
+	"""
+
+	make_directory(joinpath(path_to_data_folder, "test"))
+	make_directory(joinpath(path_to_data_folder, "train"))
+	test_periods = CSV.read(path_to_test_periods_csv)
+
+	for site in test_periods[!, :site_id]
+
+		data = CSV.read(joinpath(path_to_data_folder, "$(site).csv"), copycols=true)
+		periods = test_periods[!, :test_periods]
+		test_data = DataFrame()
+
+		for period in periods
+			df = data[data.period_id .== period, :]
+			timestamp = df[1, :timestamp]
+			history_span = timestamp-Dates.Day(1):Dates.Minute(15):timestamp-Dates.Minute(15)
+			history = data[in(history_span).(data.timestamp), :]
+			history[!, :period_id] = period*ones(Int64, 96)
+			new_period = vcat(history, df)
+			test_data = vcat(test_data, new_period)
+		end
+
+		CSV.write(joinpath(path_to_data_folder, "test", "$(site).csv"), test_data)
+		train_data = data[(!).(in(periods).(data.period_id)), :]
+		CSV.write(joinpath(path_to_data_folder, "train", "$(site).csv"), train_data)
+
+	end
+
+	return nothing
+
+end
+
 function load_sites(path_to_metadata_csv::String, path_to_test_data_folder::Union{String, Nothing},
 	path_to_train_data_folder::Union{String, Nothing}, path_to_save_folder::String)
 
