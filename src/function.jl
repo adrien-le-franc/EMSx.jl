@@ -14,10 +14,11 @@ function train_test_split(path_to_data_folder::String, path_to_test_periods_csv:
 	make_directory(joinpath(path_to_data_folder, "train"))
 	test_periods = CSV.read(path_to_test_periods_csv)
 
-	for site in test_periods[!, :site_id]
+	@showprogress for site in test_periods[!, :site_id]
 
 		data = CSV.read(joinpath(path_to_data_folder, "$(site).csv"), copycols=true)
-		periods = test_periods[!, :test_periods]
+		periods = test_periods[test_periods.site_id .== site, :test_periods][1]
+		periods = [parse(Int64, id) for id in split(periods[2:end-1], ",")]
 		test_data = DataFrame()
 
 		for period in periods

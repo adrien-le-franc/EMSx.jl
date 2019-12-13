@@ -52,7 +52,7 @@ function simulate_sites_parallel(controller::EMSx.AbstractController,
 					if idx <= 0
 						break
 					end
-					println("processing a new job - jobs left: $(idx-1) / $(length(sites))")
+					println("processing a new job - jobs left in queue : $(idx-1) / $(length(sites))")
 					_ = remotecall_fetch(simulate_site, p, controller, sites[idx], prices)
 				end
 			end
