@@ -1,6 +1,12 @@
 # EMSx.jl
 `EMSx.jl` is a Julia package for simulating the control of an electric microgrid with an Energy Management System.
 
+<p float="left">
+  <img src="docs/enpc.png" width="100" />
+  <img src="docs/efficacity.png" width="100" /> 
+  <img src="docs/schneider.png" width="100" />
+</p>
+
 ## Installation
 If not installed, download [Julia 1.3.0](https://julialang.org/downloads/) or higher versions. 
 Then, add the `EMSx.jl` package using Julia's [package manager](https://julialang.github.io/Pkg.jl/v1/managing-packages/). Note that `EMSx.jl` is not a registered package.
