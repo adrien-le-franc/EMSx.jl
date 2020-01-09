@@ -1,7 +1,7 @@
-<img src="docs/logos.png" width="600" />
+<img src="docs/logos.png" width="500" />
 
 # EMSx.jl
-`EMSx.jl` is a Julia package for simulating the control of an electric microgrid with an Energy Management System. It originated from a project between [CERMICS](https://cermics-lab.enpc.fr/), [Efficacity](https://www.efficacity.com/) and [Schneider Electric](https://www.se.com/fr/fr/).
+`EMSx.jl` is a Julia package for simulating the control of an electric microgrid with an Energy Management System. It originated from a joint project between [CERMICS](https://cermics-lab.enpc.fr/), [Efficacity](https://www.efficacity.com/) and [Schneider Electric](https://www.se.com/fr/fr/).
 
 ## Installation
 If not installed, download [Julia 1.3.0](https://julialang.org/downloads/) or higher versions. 
@@ -11,7 +11,7 @@ Then, add the `EMSx.jl` package using Julia's [package manager](https://julialan
 The microgrid control simulation relies on [data](https://shop.exchange.se.com/apps/52535/microgrid-energy-management-benchmark#!overview) provided by Schneider Electric. 
 
 ## Using EMSx.jl
-`EMSx.jl` is a package for simulating the control of an electric microgrid on testing periods of one week. We have a pool of 70 microgrids with data. Each microgrid is composed of 
+`EMSx.jl` is a package for simulating the control of an electric microgrid on testing periods of one week. We have a pool of 70 microgrids with data. Each microgrid is composed with 
 
 * a photovoltaic (PV) generating unit ,
 * a battery,
