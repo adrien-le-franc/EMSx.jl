@@ -5,6 +5,20 @@
 
 make_directory(path::String) = if !isdir(path) mkpath(path) end
 
+function download_zipfile(apikey::String, path_to_data_folder)
+
+	url = "https://data.exchange.se.com/api/datasets/1.0/microgrid-energy-management-benchmark-time-series/alternative_exports/memb_ts_part_1_zip/"
+    payload = ""
+    headers = (Dict(
+        "Authorization" => "Apikey "*apikey,
+        "cache-control"=> "no-cache"
+        ))
+
+    r = HTTP.get(url, data=payload, headers=headers)
+    write(joinpath(path_to_data_folder, "1.zip"), r.body)
+
+end
+
 function train_test_split(path_to_data_folder::String, path_to_test_periods_csv::String)
 	"""
 	is to become download_dataset() when data is available on exchange platform
