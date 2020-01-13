@@ -5,17 +5,29 @@
 
 make_directory(path::String) = if !isdir(path) mkpath(path) end
 
-function download_zipfile(apikey::String, path_to_data_folder)
 
-	url = "https://data.exchange.se.com/api/datasets/1.0/microgrid-energy-management-benchmark-time-series/alternative_exports/memb_ts_part_1_zip/"
+function download_sites_data(apikey::String, path_to_data_folder::String, files_range = 1:24)
+	nmax = length(files_range)
+	base_url = "https://data.exchange.se.com/api/datasets/1.0/microgrid-energy-management-benchmark-time-series/alternative_exports/memb_ts_part_"
     payload = ""
     headers = (Dict(
         "Authorization" => "Apikey "*apikey,
         "cache-control"=> "no-cache"
         ))
-
-    r = HTTP.get(url, data=payload, headers=headers)
-    write(joinpath(path_to_data_folder, "1.zip"), r.body)
+	#file_sizes = [213, 161, 179, 229, ]
+	max_file_size = 250;
+	for (ind_n, n) in enumerate(files_range)
+		file = joinpath(path_to_data_folder, string(n)*".zip")
+		io = open(file, "w")
+	    t = @async HTTP.get(base_url*string(n)*"_zip/", data=payload, headers=headers, 
+	    			 response_stream = io)
+	    p = Progress(max_file_size, 1, "Downloading file $ind_n / $nmax")
+	    while t.state != :done
+	    	update!(p, filesize(file))
+	    end 
+	    println("File $n / $nmax downloaded, file size is "*string(filesize(file)))
+	    close(io)
+	end
 
 end
 
