@@ -6,31 +6,42 @@
 make_directory(path::String) = if !isdir(path) mkpath(path) end
 
 
-function download_sites_data(apikey::String, path_to_data_folder::String, files_range = 1:24)
-	nmax = length(files_range)
-	base_url = "https://data.exchange.se.com/api/datasets/1.0/microgrid-energy-management-benchmark-time-series/alternative_exports/memb_ts_part_"
+function download_sites_data(apikey::String, 
+							 path_to_data_folder::String, 
+							 files_range::UnitRange{Int} = 1:24)
+	files_number = length(files_range)
+	base_url = "https://data.exchange.se.com/api/datasets/1.0/
+				microgrid-energy-management-benchmark-time-series/
+				alternative_exports/memb_ts_part_"
     payload = ""
-    headers = (Dict(
-        "Authorization" => "Apikey "*apikey,
-        "cache-control"=> "no-cache"
-        ))
-	file_sizes = [223_307_074, 160_151_765, 178_683_342, 239_746_014, 194_319_624,
-				  229_800_343, 225_999_196, 205_952_190, 227_255_093, 188_492_377, 
-				  175_456_044, 223_456_964, 212_553_744, 194_117_872, 183_992_889,
-				  230_422_835, 243_373_871, 180_393_452, 163_495_560, 176_314_186, 
-				  167_929_157, 183_420_654, 178_688_199, 90_261_417]
-	for (ind_n, n) in enumerate(files_range)
-		file = joinpath(path_to_data_folder, string(n)*".zip")
-		io = open(file, "w")
-	    t = @async HTTP.get(base_url*string(n)*"_zip/", data=payload, headers=headers, 
-	    			 response_stream = io)
-	    p = Progress(file_sizes[n], 1, "Downloading file $ind_n / $nmax")
-	    while t.state != :done
-	    	update!(p, filesize(file))
-	    end 
-	    close(io)
+    headers = Dict("Authorization" => "Apikey "*apikey, 
+    			   "cache-control"=> "no-cache")
+	files_sizes = [223_307_074, 160_151_765, 178_683_342, 239_746_014, 
+				   194_319_624, 229_800_343, 225_999_196, 205_952_190, 
+				   227_255_093, 188_492_377, 175_456_044, 223_456_964, 
+				   212_553_744, 194_117_872, 183_992_889, 230_422_835, 
+				   243_373_871, 180_393_452, 163_495_560, 176_314_186, 
+				   167_929_157, 183_420_654, 178_688_199, 90_261_417]
+
+	for (fileindex, filenumber) in enumerate(files_range)
+		filepath = joinpath(path_to_data_folder, string(filenumber)*".zip")
+		download_stream = open(filepath, "w")
+	    download_task = @async HTTP.get(base_url*string(filenumber)*"_zip/", 
+	    								data=payload, 
+	    								headers=headers, 
+	    								response_stream = download_stream)
+	    progress_meter = Progress(files_sizes[filenumber], 
+	    						  "Downloading file $fileindex / $files_number")
+	    while download_task.state != :done
+	    	update!(progress_meter, filesize(filepath))
+	    end
+	    close(download_stream)
+	    @assert filesize(filepath) == files_sizes[n] "File $n could be corrupted, 
+	    											  consider downloading this 
+	    											  file again" 
 	end
 
+	return
 end
 
 function train_test_split(path_to_data_folder::String, path_to_test_periods_csv::String)
