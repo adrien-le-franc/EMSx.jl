@@ -14,18 +14,20 @@ function download_sites_data(apikey::String, path_to_data_folder::String, files_
         "Authorization" => "Apikey "*apikey,
         "cache-control"=> "no-cache"
         ))
-	#file_sizes = [213, 161, 179, 229, ]
-	max_file_size = 250;
+	file_sizes = [223_307_074, 160_151_765, 178_683_342, 239_746_014, 194_319_624,
+				  229_800_343, 225_999_196, 205_952_190, 227_255_093, 188_492_377, 
+				  175_456_044, 223_456_964, 212_553_744, 194_117_872, 183_992_889,
+				  230_422_835, 243_373_871, 180_393_452, 163_495_560, 176_314_186, 
+				  167_929_157, 183_420_654, 178_688_199, 90_261_417]
 	for (ind_n, n) in enumerate(files_range)
 		file = joinpath(path_to_data_folder, string(n)*".zip")
 		io = open(file, "w")
 	    t = @async HTTP.get(base_url*string(n)*"_zip/", data=payload, headers=headers, 
 	    			 response_stream = io)
-	    p = Progress(max_file_size, 1, "Downloading file $ind_n / $nmax")
+	    p = Progress(file_sizes[n], 1, "Downloading file $ind_n / $nmax")
 	    while t.state != :done
 	    	update!(p, filesize(file))
 	    end 
-	    println("File $n / $nmax downloaded, file size is "*string(filesize(file)))
 	    close(io)
 	end
 
