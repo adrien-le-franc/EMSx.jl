@@ -1,13 +1,17 @@
 # developed with Julia 1.1.1
 #
 # functions to prepare and access the sites database
-const SCHNEIDER_API = "https://data.exchange.se.com/explore/dataset"
-const DATASET = "/microgrid-energy-management-benchmark-time-series"
+const SCHNEIDER_API = "https://data.exchange.se.com/explore/"
+const DATASET = "dataset/microgrid-energy-management-benchmark-time-series"
 
 # modified MIT expat licensed code from HTTP.jl
 # https://github.com/JuliaWeb/HTTP.jl/blob/668e7e68747bb333ebde13af8d16add5b82b3b8a/src/download.jl#L92
-function _download(url::AbstractString, file_path::AbstractString; 
-                  headers=Header[], file_size=nothing, update_period=1, kw...)
+function _download(url::AbstractString, 
+                   file_path::AbstractString; 
+                   headers=Header[], 
+                   file_size=nothing, 
+                   update_period=1, 
+                   kw...)
     format_progress(x) = round(x, digits=4)
     format_bytes(x) = !isfinite(x) ? "∞ B" : Base.format_bytes(x)
     format_seconds(x) = "$(round(x; digits=2)) s"
@@ -59,7 +63,9 @@ function _download(url::AbstractString, file_path::AbstractString;
     return
 end
 
-function download_site_csv(siteid::Int, path_to_data_folder::String, compressed::Bool = true)
+function download_site_csv(siteid::Int, 
+                           path_to_data_folder::String, 
+                           compressed::Bool = true)
     # file_size = load(joinpath(@__FILE__, "..", "metadata", "sitefilesizes.jld"))["sizes"]["$(siteid).csv.gz"]
     file_size = 100_000_000
     @assert haskey(ENV, "SCHNEIDER_API_KEY") "you did not provide your api key"* 
@@ -155,8 +161,10 @@ function train_test_split(site_file::String,
 
 end
 
-function load_sites(path_to_metadata_csv::String, path_to_test_data_folder::Union{String, Nothing},
-    path_to_train_data_folder::Union{String, Nothing}, path_to_save_folder::String)
+function load_sites(path_to_metadata_csv::String, 
+                    path_to_test_data_folder::Union{String, Nothing},
+                    path_to_train_data_folder::Union{String, Nothing}, 
+                    path_to_save_folder::String)
 
     sites = Site[]
     metadata = CSV.read(path_to_metadata_csv)
@@ -240,7 +248,7 @@ function load_site_train_data(site::Site)
     data = CSV.read(GzipDecompressorStream(compressed_data), 
                     delim=';', 
                     copycols = true)
-    site_hidden_test_data = Site(site.id, 
+    site_hidden_train_data = Site(site.id, 
                                  site.battery, 
                                  site.path_to_test_data_csv, 
                                  nothing, 
