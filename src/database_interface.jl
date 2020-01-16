@@ -1,6 +1,89 @@
 # developed with Julia 1.1.1
 #
 # functions to prepare and access the sites database
+const SCHNEIDER_API = "https://data.exchange.se.com/explore/dataset"
+const DATASET = "/microgrid-energy-management-benchmark-time-series"
+
+# modified MIT expat licensed code from HTTP.jl
+# https://github.com/JuliaWeb/HTTP.jl/blob/668e7e68747bb333ebde13af8d16add5b82b3b8a/src/download.jl#L92
+function _download(url::AbstractString, file_path::AbstractString; 
+                  headers=Header[], file_size=nothing, update_period=1, kw...)
+    format_progress(x) = round(x, digits=4)
+    format_bytes(x) = !isfinite(x) ? "∞ B" : Base.format_bytes(x)
+    format_seconds(x) = "$(round(x; digits=2)) s"
+    format_bytes_per_second(x) = format_bytes(x) * "/s"
+
+    file_name = split(file_path, '/')[end] 
+
+    local file
+    HTTP.open("GET", url, headers; kw...) do stream
+        resp = startread(stream)
+        eof(stream) && return  # don't do anything for streams we can't read (yet)
+        
+        file = file_path
+        total_bytes = parse(Float64, HTTP.header(resp, "Content-Length", "NaN"))
+        if !isnothing(file_size)
+            total_bytes = file_size
+        end
+        downloaded_bytes = 0
+        start_time = Dates.now()
+        prev_time = Dates.now()
+
+        p = Progress(floor(Int,total_bytes), update_period, "Downloading file "*file_name)
+        
+        function report_callback()
+            prev_time = Dates.now()
+            taken_time = (prev_time - start_time).value / 1000 # in seconds
+            average_speed = downloaded_bytes / taken_time
+            remaining_bytes = total_bytes - downloaded_bytes
+            remaining_time = remaining_bytes / average_speed
+            completion_progress = floor(Int,downloaded_bytes)
+        
+            update!(p, completion_progress)
+        end
+
+        Base.open(file, "w") do fh
+            while(!eof(stream))
+                downloaded_bytes += write(fh, readavailable(stream))
+                if !isinf(update_period)
+                    if Dates.now() - prev_time > Dates.Millisecond(round(1000update_period))
+                        report_callback()
+                    end
+                end
+            end
+        end
+        if !isinf(update_period)
+            report_callback()
+        end
+    end
+    return
+end
+
+function download_site_csv(siteid::Int, path_to_data_folder::String, compressed::Bool = true)
+    # file_size = load(joinpath(@__FILE__, "..", "metadata", "sitefilesizes.jld"))["sizes"]["$(siteid).csv.gz"]
+    file_size = 100_000_000
+    @assert haskey(ENV, "SCHNEIDER_API_KEY") "you did not provide your api key"* 
+            "please set it with: ENV[\"SCHNEIDER_API_KEY\"] = *your api key*"
+    
+    headers = Dict("Authorization" => "Apikey "*ENV["SCHNEIDER_API_KEY"])
+    
+    if compressed
+        headers["Accept-Encoding"]="gzip"
+    end
+
+    url = SCHNEIDER_API*DATASET*"/download/?format=csv&refine.site_id=$(siteid)"*
+          "&use_labels_for_header=true&csv_separator=%3B"
+    file_extension = compressed ? ".csv.gz" : ".csv"
+    _download(url, joinpath(path_to_data_folder, "$(siteid)"*file_extension); 
+              headers=headers, file_size=file_size)
+end
+
+function download_sites_data(path_to_data_folder::String, 
+                             sitesid::UnitRange{Int} = 1:70)
+    @assert (maximum(sitesid) <= 70) && (minimum(sitesid) >= 1)
+    download_site_csv.(sitesid, path_to_data_folder)
+    return
+end
 
 make_directory(path::String) = if !isdir(path) mkpath(path) end
 
@@ -13,35 +96,7 @@ function gzpack(file::String)
     end
 end
 
-function download_sites_data(apikey::String, 
-                             path_to_data_folder::String, 
-                             sites_range::UnitRange{Int} = 1:70)
-    files_number = length(sites_range)
-    req_url(siteid::Int) = "https://data.exchange.se.com/explore/dataset/microgrid-energy-management-benchmark-time-series/download/?format=csv&refine.site_id=$(siteid)&use_labels_for_header=true&csv_separator=%3B"
-
-    payload = ""
-    headers = headers = Dict("Authorization" => "Apikey "*apikey, 
-                             "Accept-Encoding" => "gzip")
-
-    @showprogress for (fileindex, site_id) in enumerate(sites_range)
-        filepath = joinpath(path_to_data_folder, string(site_id)*".csv.gz")
-        download_stream = open(filepath, "w")
-        download_task = HTTP.get(req_url(site_id), 
-                                 data=payload, 
-                                 headers=headers, 
-                                 response_stream = download_stream)
-        close(download_stream)
-
-        download_succeded = (download_task.status == 200)
-        @assert download_succeded "Site $site_id data download failed, 
-                                    you should download this site again" 
-    end
-
-    return
-end
-
-function initialize_data(path_to_data_folder::String, 
-                         path_to_test_periods_csv::String)
+function initialize_data(path_to_data_folder::String)
     println()
     println("Splitting train and test datasets")
     make_directory(joinpath(path_to_data_folder, "test"))
@@ -49,20 +104,30 @@ function initialize_data(path_to_data_folder::String,
     ls = readdir(path_to_data_folder)
     full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
     @showprogress for full_site_file in full_site_files
-        train_test_split(full_site_file, path_to_data_folder, path_to_test_periods_csv)
+        train_test_split(full_site_file, path_to_data_folder)
         rm(full_site_file)
     end
 end
 
 function train_test_split(site_file::String, 
-                          path_to_data_folder::String, 
-                          path_to_test_periods_csv::String)
-    date_format = dateformat"y-m-dTH:M:S+z"
+                          path_to_data_folder::String)
+    
+    path_to_test_periods_csv = joinpath(@__DIR__,
+                                        "..", 
+                                        "metadata", 
+                                        "test_periods.csv")
     test_periods = CSV.read(path_to_test_periods_csv)
+    date_format = dateformat"y-m-dTH:M:S+z"
     site_id = parse(Int, match(r"(.*)\.csv.gz", site_file).captures[1])
-    data = CSV.read(GzipDecompressorStream(open(joinpath(path_to_data_folder, site_file))), delim=';', copycols = true)
+
+    compressed_data = open(joinpath(path_to_data_folder, site_file))
+    data = CSV.read(GzipDecompressorStream(compressed_data), 
+                    delim=';', 
+                    copycols = true)
+    
     data.timestamp = DateTime.(data.timestamp, date_format)
     sort!(data, :timestamp)
+    
     periods = test_periods[test_periods.site_id .== site_id, :test_periods][1]
     periods = [parse(Int, id) for id in split(periods[2:end-1], ",")]
     test_data = DataFrame()
@@ -77,11 +142,11 @@ function train_test_split(site_file::String,
         test_data = vcat(test_data, new_period)
     end
 
-    test_file = joinpath(path_to_data_folder, "test", site_file)
+    test_file = joinpath(path_to_data_folder, "test", "$(site_id).csv")
     CSV.write(test_file, test_data)
     gzpack(test_file)
     
-    train_file = joinpath(path_to_data_folder, "train", site_file)
+    train_file = joinpath(path_to_data_folder, "train", "$(site_id).csv")
     train_data = data[(!).(in(periods).(data.period_id)), :]
     CSV.write(train_file, train_data)
     gzpack(train_file)
@@ -106,6 +171,14 @@ function load_sites(path_to_metadata_csv::String, path_to_test_data_folder::Unio
     return sites
 
 end
+
+function load_sites(path_to_data_folder::String)
+    path_to_metadata_csv = joinpath(@__DIR__, "..", "metadata")
+    path_to_test_data_folder = joinpath(path_to_data_folder, "test")
+    path_to_train_data_folder = joinpath(path_to_data_folder, "train")
+    path_to_save_folder = joinpath(path_to_data_folder, "save")
+    return load_sites(path_to_metadata_csv, path_to_test_data_folder,
+                      path_to_train_data_folder, path_to_save_folder)
 
 function load_prices_csv(path_to_csv::String)
 
@@ -146,9 +219,31 @@ function load_prices(path_to_prices::String)
 
 end
 
-function load_site_data(site::Site)
-    test_data = CSV.read(site.path_to_test_data_csv)
-    site_hidden_test_data = Site(site.id, site.battery, nothing, 
-        site.path_to_train_data_csv, site.path_to_save_folder)
+function load_site_test_data(site::Site)
+    compressed_data = open(site.path_to_test_data_csv)
+    test_data = CSV.read(GzipDecompressorStream(compressed_data), 
+                    delim=';', 
+                    copycols = true)
+    site_hidden_test_data = Site(site.id, 
+                                 site.battery, 
+                                 nothing, 
+                                 site.path_to_train_data_csv, 
+                                 site.path_to_save_folder)
     return test_data, site_hidden_test_data
+end
+
+load_site_data(site::Site) = load_site_test_data(site) # too avoid code breaks
+
+
+function load_site_train_data(site::Site)
+    compressed_data = open(site.path_to_train_data_csv)
+    data = CSV.read(GzipDecompressorStream(compressed_data), 
+                    delim=';', 
+                    copycols = true)
+    site_hidden_test_data = Site(site.id, 
+                                 site.battery, 
+                                 site.path_to_test_data_csv, 
+                                 nothing, 
+                                 site.path_to_save_folder)
+    return data, site_hidden_train_data
 end
