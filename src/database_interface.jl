@@ -187,6 +187,7 @@ function load_sites(path_to_data_folder::String)
     path_to_save_folder = joinpath(path_to_data_folder, "save")
     return load_sites(path_to_metadata_csv, path_to_test_data_folder,
                       path_to_train_data_folder, path_to_save_folder)
+end
 
 function load_prices_csv(path_to_csv::String)
 
