@@ -66,8 +66,8 @@ end
 function download_site_csv(siteid::Int, 
                            path_to_data_folder::String, 
                            compressed::Bool = true)
-    # file_size = load(joinpath(@__FILE__, "..", "metadata", "sitefilesizes.jld"))["sizes"]["$(siteid).csv.gz"]
-    file_size = 100_000_000
+    sizes_jld_file = joinpath(@__DIR__, "..", "metadata", "sitefilesizes.jld")
+    file_size = load(sizes_jld_file)["$(siteid).csv.gz"]
     @assert haskey(ENV, "SCHNEIDER_API_KEY") "you did not provide your api key"* 
             "please set it with: ENV[\"SCHNEIDER_API_KEY\"] = *your api key*"
     
