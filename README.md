@@ -1,6 +1,15 @@
-<img src="docs/logos.png" width="500" />
 
 # EMSx.jl
+| **Build Status** |
+|:----------------:|
+| [![Build Status][build-img]][build-url] | 
+| [![Codecov branch][codecov-img]][codecov-url] |
+
+[build-img]: https://travis-ci.org/adrien-le-franc/EMSx.jl.svg?branch=master
+[build-url]: https://travis-ci.org/adrien-le-franc/EMSx.jl
+[codecov-img]: https://codecov.io/gh/adrien-le-franc/EMSx.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/adrien-le-franc/EMSx.jl
+
 `EMSx.jl` is a Julia package for simulating the control of an electric microgrid with an Energy Management System. It originated from a joint project between [CERMICS](https://cermics-lab.enpc.fr/), [Efficacity](https://www.efficacity.com/) and [Schneider Electric](https://www.se.com/fr/fr/).
 
 ## Installation
@@ -52,3 +61,5 @@ EMSx.simulate_sites(controller,
 ```
 The behavior of `DummyController` is specified by the corresponding method of the `compute_control` function. For more complex controllers, you might also want to implement a specific method for the
 `initialize_site_controller` function. We refer to [examples](https://github.com/adrien-le-franc/EMSx.jl/tree/master/examples) for more complex usages.
+
+<img src="docs/logos.png" width="500" />

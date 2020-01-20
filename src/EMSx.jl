@@ -6,8 +6,6 @@ using Dates, TimeZones, CSV, DataFrames, CodecZlib
 using JLD
 using HTTP
 
-import DataDeps: unpack
-
 include("struct.jl")
 include("database_interface.jl")
 include("function.jl")
