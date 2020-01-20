@@ -4,11 +4,11 @@
 
 
 function simulate_sites(controller::AbstractController, 
-	path_to_save_folder::String,
-	path_to_price_folder::String, 
-	path_to_metadata_csv_file::String, 
-	path_to_test_data_folder::String,
-	path_to_train_data_folder::Union{String, Nothing}=nothing)
+						path_to_save_folder::String,
+						path_to_price_folder::String, 
+						path_to_metadata_csv_file::String, 
+						path_to_test_data_folder::String,
+						path_to_train_data_folder::Union{String, Nothing}=nothing)
 	
 	make_directory(path_to_save_folder)
 	prices = load_prices(path_to_price_folder)
@@ -30,11 +30,11 @@ function simulate_sites(controller::AbstractController,
 end
 
 function simulate_sites_parallel(controller::EMSx.AbstractController,
-	path_to_save_folder::String, 
-	path_to_price_folder::String, 
-	path_to_metadata_csv_file::String, 
-	path_to_test_data_folder::String,
-	path_to_train_data_folder::Union{String, Nothing}=nothing)
+								 path_to_save_folder::String, 
+								 path_to_price_folder::String, 
+								 path_to_metadata_csv_file::String, 
+								 path_to_test_data_folder::String,
+								 path_to_train_data_folder::Union{String, Nothing}=nothing)
 
 	make_directory(path_to_save_folder)
 	prices = load_prices(path_to_price_folder)
@@ -61,8 +61,9 @@ function simulate_sites_parallel(controller::EMSx.AbstractController,
 
 end
 
-function simulate_site(controller::AbstractController, site::Site, 
-	prices::Array{Price})
+function simulate_site(controller::AbstractController, 
+					   site::Site, 
+					   prices::Array{Price})
 	
 	test_data, site = load_site_data(site)
 	controller = initialize_site_controller(controller, site)
@@ -84,7 +85,9 @@ function simulate_site(controller::AbstractController, site::Site,
 
 end
 
-function simulate_period!(controller::AbstractController, period::Period, prices::Array{Price})
+function simulate_period!(controller::AbstractController, 
+						  period::Period, 
+						  prices::Array{Price})
 
 	for price in prices
 
@@ -98,7 +101,9 @@ function simulate_period!(controller::AbstractController, period::Period, prices
 
 end
 
-function simulate_scenario(controller::AbstractController, period::Period, price::Price) 
+function simulate_scenario(controller::AbstractController, 
+						   period::Period, 
+						   price::Price) 
 
 	horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period data
 	id = Id(period.site.id, period.id, price.name, string(typeof(controller)))
@@ -122,8 +127,9 @@ function simulate_scenario(controller::AbstractController, period::Period, price
 
 end
 
-function apply_control(t::Int64, horizon::Int64, price::Price, period::Period, soc::Float64, 
-	control::Float64)
+function apply_control(t::Int64, horizon::Int64, 
+					   price::Price, period::Period, 
+					   soc::Float64, control::Float64)
 	"""
 	note on the load and pv values:
 	at the end of the period values at t+1 cannot be accessed, replaced by values at t=horizon

@@ -65,9 +65,14 @@ end
 
 function download_site_csv(siteid::Int, 
                            path_to_data_folder::String, 
-                           compressed::Bool = true)
-    sizes_jld_file = joinpath(@__DIR__, "..", "metadata", "sitefilesizes.jld")
-    file_size = load(sizes_jld_file)["$(siteid).csv.gz"]
+                           compressed::Bool = true; 
+                           periods::Union{Nothing, Array{Int}} = nothing,
+                           progress::Bool = true)
+    file_size = 0
+    if progress
+        sizes_jld_file = joinpath(@__DIR__, "..", "metadata", "sitefilesizes.jld")
+        file_size = load(sizes_jld_file)["$(siteid).csv.gz"]
+    end
     @assert haskey(ENV, "SCHNEIDER_API_KEY") "you did not provide your api key"* 
             "please set it with: ENV[\"SCHNEIDER_API_KEY\"] = *your api key*"
     
@@ -77,17 +82,30 @@ function download_site_csv(siteid::Int,
         headers["Accept-Encoding"]="gzip"
     end
 
-    url = SCHNEIDER_API*DATASET*"/download/?format=csv&refine.site_id=$(siteid)"*
-          "&use_labels_for_header=true&csv_separator=%3B"
+
+    url = SCHNEIDER_API*DATASET*"/download/?format=csv&refine.site_id=$(siteid)"
+
+    if !isnothing(periods)
+        for p in periods
+            url *= "&refine.period_id=$p"
+        end
+        url *= "&disjunctive.period_id=true"
+    end
+
+    url *= "&use_labels_for_header=true&csv_separator=%3B"
+    
     file_extension = compressed ? ".csv.gz" : ".csv"
     _download(url, joinpath(path_to_data_folder, "$(siteid)"*file_extension); 
               headers=headers, file_size=file_size)
 end
 
 function download_sites_data(path_to_data_folder::String, 
-                             sitesid::UnitRange{Int} = 1:70)
+                             sitesid::UnitRange{Int} = 1:70; 
+                             kw...)
     @assert (maximum(sitesid) <= 70) && (minimum(sitesid) >= 1)
-    download_site_csv.(sitesid, path_to_data_folder)
+    for siteid in sitesid
+        download_site_csv(siteid, path_to_data_folder; kw...)
+    end
     return
 end
 
@@ -102,7 +120,18 @@ function gzpack(file::String)
     end
 end
 
-function initialize_data(path_to_data_folder::String)
+function read_site_file(file::String; kw...)
+    f = open(file)
+    csv = CSV.read(GzipDecompressorStream(f); kw...)
+    close(f)
+    return csv
+end
+
+function initialize_data(path_to_data_folder::String,
+                         path_to_test_periods_csv::String = joinpath(@__DIR__,
+                                                                     "..", 
+                                                                     "metadata", 
+                                                                     "test_periods.csv"))
     println()
     println("Splitting train and test datasets")
     make_directory(joinpath(path_to_data_folder, "test"))
@@ -110,26 +139,24 @@ function initialize_data(path_to_data_folder::String)
     ls = readdir(path_to_data_folder)
     full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
     @showprogress for full_site_file in full_site_files
-        train_test_split(full_site_file, path_to_data_folder)
-        rm(full_site_file)
+        train_test_split(full_site_file, 
+                         path_to_data_folder, 
+                         path_to_test_periods_csv)
+        rm(joinpath(path_to_data_folder, full_site_file))
     end
 end
 
 function train_test_split(site_file::String, 
-                          path_to_data_folder::String)
+                          path_to_data_folder::String,
+                          path_to_test_periods_csv::String)
     
-    path_to_test_periods_csv = joinpath(@__DIR__,
-                                        "..", 
-                                        "metadata", 
-                                        "test_periods.csv")
+    
     test_periods = CSV.read(path_to_test_periods_csv)
     date_format = dateformat"y-m-dTH:M:S+z"
     site_id = parse(Int, match(r"(.*)\.csv.gz", site_file).captures[1])
 
-    compressed_data = open(joinpath(path_to_data_folder, site_file))
-    data = CSV.read(GzipDecompressorStream(compressed_data), 
-                    delim=';', 
-                    copycols = true)
+    data = read_site_file(joinpath(path_to_data_folder, site_file), 
+                          copycols = true)
     
     data.timestamp = DateTime.(data.timestamp, date_format)
     sort!(data, :timestamp)
@@ -229,10 +256,7 @@ function load_prices(path_to_prices::String)
 end
 
 function load_site_test_data(site::Site)
-    compressed_data = open(site.path_to_test_data_csv)
-    test_data = CSV.read(GzipDecompressorStream(compressed_data), 
-                    delim=';', 
-                    copycols = true)
+    test_data = read_site_file(site.path_to_test_data_csv, copycols = true)
     site_hidden_test_data = Site(site.id, 
                                  site.battery, 
                                  nothing, 
@@ -245,14 +269,11 @@ load_site_data(site::Site) = load_site_test_data(site) # too avoid code breaks
 
 
 function load_site_train_data(site::Site)
-    compressed_data = open(site.path_to_train_data_csv)
-    data = CSV.read(GzipDecompressorStream(compressed_data), 
-                    delim=';', 
-                    copycols = true)
+    train_data = read_site_file(site.path_to_train_data_csv, copycols = true)
     site_hidden_train_data = Site(site.id, 
                                  site.battery, 
                                  site.path_to_test_data_csv, 
                                  nothing, 
                                  site.path_to_save_folder)
-    return data, site_hidden_train_data
+    return train_data, site_hidden_train_data
 end
