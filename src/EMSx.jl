@@ -2,10 +2,12 @@ module EMSx
 
 using ProgressMeter 
 using Distributed
-using Dates, CSV, DataFrames
+using Dates, TimeZones, CSV, DataFrames, CodecZlib
 using JLD
+using HTTP
 
 include("struct.jl")
+include("database_interface.jl")
 include("function.jl")
 include("simulate.jl") 
 

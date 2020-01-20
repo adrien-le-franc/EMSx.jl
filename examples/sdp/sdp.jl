@@ -78,7 +78,7 @@ end
 ## calibration specific function
 
 function compute_value_functions(controller::Sdp)
-	return StoOpt.compute_value_functions(controller.model)
+    return StoOpt.compute_value_functions(controller.model)
 end
 
 ## simulation specific functions

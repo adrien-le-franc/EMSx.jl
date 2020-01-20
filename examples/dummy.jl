@@ -13,7 +13,7 @@ args = parse_commandline()
 const controller = EMSx.DummyController()
 
 EMSx.simulate_sites(controller,
-	joinpath(args["save"], "dummy"),
-	args["price"],
-	args["metadata"],
-	args["test"])
+    joinpath(args["save"], "dummy"),
+    args["price"],
+    args["metadata"],
+    args["test"])
