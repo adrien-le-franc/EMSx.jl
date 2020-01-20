@@ -1,0 +1,22 @@
+
+language: julia
+os:
+    - linux
+julia:
+    - 1.2
+matrix:
+    allow_failures:
+        - julia: nightly
+notifications:
+    email: false
+sudo: false
+addons:
+    apt_packages:
+        - gfortran
+        - liblapack-dev
+        - libgmp-dev
+        - libglpk-dev
+after_success:
+    - echo $TRAVIS_JULIA_VERSION
+    # push coverage results to Codecov
+    - julia -e 'cd(Pkg.dir("EMSx")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
