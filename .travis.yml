@@ -20,4 +20,4 @@ codecove: true
 after_success:
     - echo $TRAVIS_JULIA_VERSION
     # push coverage results to Codecov
-    - julia -e 'cd(Pkg.dir("EMSx")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+    - julia -e 'using Pkg; cd(Pkg.dir("EMSx")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
