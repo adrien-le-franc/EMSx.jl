@@ -16,6 +16,7 @@ addons:
         - liblapack-dev
         - libgmp-dev
         - libglpk-dev
+codecove: true
 after_success:
     - echo $TRAVIS_JULIA_VERSION
     # push coverage results to Codecov
