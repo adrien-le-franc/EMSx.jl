@@ -17,7 +17,7 @@ function _download(url::AbstractString,
     format_seconds(x) = "$(round(x; digits=2)) s"
     format_bytes_per_second(x) = format_bytes(x) * "/s"
 
-    file_name = split(file_path, '/')[end] 
+    file_name = basename(file_path) 
 
     local file
     HTTP.open("GET", url, headers; kw...) do stream
@@ -240,12 +240,12 @@ function load_prices(path_to_prices::String)
     prices = Price[]
 
     if !isdir(path_to_prices)
-        name = split(split(path_to_prices, "/")[end], ".")[1]
+        name = splitext(basename(path_to_prices))[1]
         data_frame = load_prices_csv(path_to_prices)
         push!(prices, Price(name, data_frame[!, :buy], data_frame[!, :sell]))
     else
         for file in readdir(path_to_prices)
-            name = split(split(path_to_prices, "/")[end], ".")[1]
+            name = splitext(basename(path_to_prices))[1]
             data_frame = load_prices_csv(joinpath(path_to_prices, file))
             push!(prices, Price(name, data_frame[!, :buy], data_frame[!, :sell]))   
         end
