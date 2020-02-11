@@ -123,10 +123,8 @@ function download_sites_data_parallel(path_to_data_folder::String,
         @async while true
             idx = (i += 1)
             idx > lastindex(sitesid) && break
-            println("Downloading site $(sitesid[idx]) $idx $i")
             download_site_csv(sitesid[idx], path_to_data_folder; 
                               offset = idx-firstindex(sitesid), kw...)
-            println("Finished site $(sitesid[idx]) $idx $i")
         end
     end
     return
