@@ -11,6 +11,7 @@ function _download(url::AbstractString,
                    headers=Header[], 
                    file_size=nothing, 
                    update_period=1, 
+                   offset=0,
                    kw...)
     format_progress(x) = round(x, digits=4)
     format_bytes(x) = !isfinite(x) ? "∞ B" : Base.format_bytes(x)
@@ -33,7 +34,8 @@ function _download(url::AbstractString,
         start_time = Dates.now()
         prev_time = Dates.now()
 
-        p = Progress(floor(Int,total_bytes), update_period, "Downloading file "*file_name)
+        p = Progress(floor(Int,total_bytes), update_period, "Downloading file "*file_name,
+                     offset=offset)
         
         function report_callback()
             prev_time = Dates.now()
@@ -67,7 +69,8 @@ function download_site_csv(siteid::Int,
                            path_to_data_folder::String, 
                            compressed::Bool = true; 
                            periods::Union{Nothing, Array{Int}} = nothing,
-                           progress::Bool = true)
+                           progress::Bool = true,
+                           offset::Int = 0)
     file_size = 0
     if progress
         sizes_jld_file = joinpath(@__DIR__, "..", "metadata", "sitefilesizes.jld")
@@ -96,7 +99,7 @@ function download_site_csv(siteid::Int,
     
     file_extension = compressed ? ".csv.gz" : ".csv"
     _download(url, joinpath(path_to_data_folder, "$(siteid)"*file_extension); 
-              headers=headers, file_size=file_size)
+              headers=headers, file_size=file_size, offset=offset)
 end
 
 function download_sites_data(path_to_data_folder::String, 
@@ -105,6 +108,26 @@ function download_sites_data(path_to_data_folder::String,
     @assert (maximum(sitesid) <= 70) && (minimum(sitesid) >= 1)
     for siteid in sitesid
         download_site_csv(siteid, path_to_data_folder; kw...)
+    end
+    return
+end
+
+function download_sites_data_parallel(path_to_data_folder::String, 
+                             sitesid::UnitRange{Int} = 1:70; 
+                             max_threads::Int = 4,
+                             kw...)
+    @assert (maximum(sitesid) <= 70) && (minimum(sitesid) >= 1)
+    i = firstindex(sitesid) - 1
+
+    @sync for p in 1:max_threads
+        @async while true
+            idx = (i += 1)
+            idx > lastindex(sitesid) && break
+            println("Downloading site $(sitesid[idx]) $idx $i")
+            download_site_csv(sitesid[idx], path_to_data_folder; 
+                              offset = idx-firstindex(sitesid), kw...)
+            println("Finished site $(sitesid[idx]) $idx $i")
+        end
     end
     return
 end
