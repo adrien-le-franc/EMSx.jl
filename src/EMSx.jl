@@ -9,6 +9,7 @@ using HTTP
 const DIR = dirname(@__DIR__)
 
 include("parallel_progress.jl")
+include("parallel.jl")
 include("struct.jl")
 include("database_interface.jl")
 include("function.jl")
