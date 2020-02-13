@@ -6,9 +6,9 @@ function init_parallel(N::Integer = Sys.CPU_THREADS; kw...)
         rmprocs(workers())
     elseif N > nworkers()
         p = addprocs(N - (nprocs() == 1 ? 0 : nworkers()); kw...)
-        @everywhere p @eval using EMSx
     elseif N < nworkers()
         rmprocs(workers()[N + 1:end])
     end
+    @everywhere @eval using EMSx
     return workers()
 end
