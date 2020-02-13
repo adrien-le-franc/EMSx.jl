@@ -191,17 +191,30 @@ function initialize_data(path_to_data_folder::String,
                                                                      "test_periods.csv");
                          delete_files::Bool = true)
     println()
-    println("Splitting train and test datasets")
     make_directory(joinpath(path_to_data_folder, "test"))
     make_directory(joinpath(path_to_data_folder, "train"))
     ls = readdir(path_to_data_folder)
     full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
-    @showprogress for full_site_file in full_site_files
+
+    prog = ParallelProgress(length(full_site_files); desc="Splitting train and test datasets ")
+    update!(prog, 0)
+    
+
+    pmap(full_site_files) do full_site_file 
         train_test_split(full_site_file, 
                          path_to_data_folder, 
                          path_to_test_periods_csv)
         delete_files && rm(joinpath(path_to_data_folder, full_site_file))
+        next!(prog)
     end
+
+    # @showprogress for full_site_file in full_site_files
+    #     train_test_split(full_site_file, 
+    #                      path_to_data_folder, 
+    #                      path_to_test_periods_csv)
+    #     delete_files && rm(joinpath(path_to_data_folder, full_site_file))
+    # end
+    return nothing
 end
 
 function train_test_split(site_file::String, 
