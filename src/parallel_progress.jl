@@ -64,8 +64,8 @@ function MultipleProgress(amount::Integer,
     @assert amount == length(lengths) "`length(lengths)` must be equal to `amount`"
 
     total_length = sum(lengths)
-    global main_progress = Progress(total_length; offset=0, kw...)
-    global progresses = Union{Progress,Nothing}[nothing for _ in 1:amount]
+    main_progress = Progress(total_length; offset=0, kw...)
+    progresses = Union{Progress,Nothing}[nothing for _ in 1:amount]
     taken_offsets = Set(Int[])
     channel = RemoteChannel(() -> Channel{Tuple{Int,Int}}(max(2amount, 64)))
 
