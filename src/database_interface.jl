@@ -9,18 +9,14 @@ const SIZE_DIVIDER = 100_000
 # https://github.com/JuliaWeb/HTTP.jl/blob/668e7e68747bb333ebde13af8d16add5b82b3b8a/src/download.jl#L92
 function _download(url::AbstractString, 
                    file_path::AbstractString; 
-                   headers=Header[], 
-                   file_size=nothing, 
-                   update_period=1, 
-                   progress=false, # false or Progress or ParallelProgress
+                   headers = Header[], 
+                   file_size = nothing, 
+                   update_period = 1, 
+                   progress = nothing, # nothing or Progress or ParallelProgress
                    kw...)
-    # format_progress(x) = round(x, digits=4)
-    # format_bytes(x) = !isfinite(x) ? "∞ B" : Base.format_bytes(x)
-    # format_seconds(x) = "$(round(x; digits=2)) s"
-    # format_bytes_per_second(x) = format_bytes(x) * "/s"
 
     file_name = basename(file_path) 
-    if isnothing(file_size)
+    if isnothing(file_size) || isnothing(progress)
         update_period = Inf
     end
 
@@ -30,26 +26,14 @@ function _download(url::AbstractString,
         eof(stream) && return  # don't do anything for streams we can't read (yet)
         
         file = file_path
-        # total_bytes = parse(Float64, HTTP.header(resp, "Content-Length", "NaN"))
-        # if !isnothing(file_size)
-        #     total_bytes = file_size
-        # end
+
         downloaded_bytes = 0
         start_time = Dates.now()
         prev_time = Dates.now()
 
-
-        # p = Progress(floor(Int,total_bytes), update_period, "Downloading file "*file_name,
-        #              offset=offset)
-        
         function report_callback()
             prev_time = Dates.now()
-            # taken_time = (prev_time - start_time).value / 1000 # in seconds
-            # average_speed = downloaded_bytes / taken_time
-            # remaining_bytes = total_bytes - downloaded_bytes
-            # remaining_time = remaining_bytes / average_speed
             completion_progress = floor(Int, downloaded_bytes / SIZE_DIVIDER)
-        
             update!(progress, completion_progress)
         end
 
@@ -64,7 +48,6 @@ function _download(url::AbstractString,
             end
         end
         if !isinf(update_period)
-            # report_callback()
             finish!(progress)
         end
     end
@@ -86,17 +69,14 @@ function download_site_csv(siteid::Int,
                            compressed::Bool = true; 
                            periods::Union{Nothing, AbstractArray{Int}} = nothing,
                            progress = true, # true/false or Progress or ParallelProgress
-                           file_size = nothing,
-                           )
-    # file_size = 0
-    # if progress != false
-    #     sizes_jld_file = joinpath(@__DIR__, "..", "metadata", "sitefilesizes.jld")
-    #     file_size = load(sizes_jld_file)["$(siteid).csv.gz"]
-    # end
+                           file_size = nothing)
 
     if progress == true
         file_size = get_file_size(siteid)
         progress = Progress(file_size; desc = "Downloading $siteid.csv.gz ")
+    elseif progress == false
+        file_size = nothing
+        progress = nothing
     end
 
     @assert haskey(ENV, "SCHNEIDER_API_KEY") "you did not provide your api key"* 
@@ -139,17 +119,19 @@ function download_sites_data(path_to_data_folder::String,
 end
 
 function download_sites_data_parallel(path_to_data_folder::String, 
-                             sitesid::AbstractVector{<:Integer} = 1:70; 
-                             max_threads::Int = 4,
-                             kw...)
+                                      sitesid::AbstractVector{<:Integer} = 1:70; 
+                                      progress = true,
+                                      max_threads::Int = 4,
+                                      kw...)
     @assert (maximum(sitesid) <= 70) && (minimum(sitesid) >= 1)
     
     file_sizes = get_file_size(sitesid)
-    mprog = MultipleProgress(length(sitesid), file_sizes;
-                             kws = [(:desc => "Downloading $j.csv.gz ",) for j in sitesid],
-                             desc = "Downloading files... ",
-                             dt = 0.1,
-                             )
+    if progress 
+        mprog = MultipleProgress(length(sitesid), file_sizes;
+                                 kws = [(:desc => "Downloading $j.csv.gz ",) for j in sitesid],
+                                 desc = "Downloading files... ",
+                                 dt = 0.1)
+    end
 
     i = firstindex(sitesid) - 1
     @sync for p in 1:max_threads
@@ -157,12 +139,12 @@ function download_sites_data_parallel(path_to_data_folder::String,
             idx = (i += 1)
             idx > lastindex(sitesid) && break
             download_site_csv(sitesid[idx], path_to_data_folder; 
-                              progress = mprog[idx], 
+                              progress = progress ? mprog[idx] : false, 
                               file_size = file_sizes[idx],
                               kw...)
         end
     end
-    finish!(mprog)
+    progress && finish!(mprog)
     return
 end
 
@@ -191,30 +173,44 @@ function initialize_data(path_to_data_folder::String,
                                                                      "test_periods.csv");
                          delete_files::Bool = true)
     println()
+    println("Splitting train and test datasets")
+    make_directory(joinpath(path_to_data_folder, "test"))
+    make_directory(joinpath(path_to_data_folder, "train"))
+    ls = readdir(path_to_data_folder)
+    full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
+    @showprogress for full_site_file in full_site_files
+        train_test_split(full_site_file, 
+                         path_to_data_folder, 
+                         path_to_test_periods_csv)
+        delete_files && rm(joinpath(path_to_data_folder, full_site_file))
+    end
+end
+
+function initialize_data_parallel(path_to_data_folder::String,
+                                  path_to_test_periods_csv::String = 
+                                      joinpath(@__DIR__,"..","metadata","test_periods.csv");
+                                  delete_files::Bool = true,
+                                  progress::Bool = true)
+    println()
     make_directory(joinpath(path_to_data_folder, "test"))
     make_directory(joinpath(path_to_data_folder, "train"))
     ls = readdir(path_to_data_folder)
     full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
 
-    prog = ParallelProgress(length(full_site_files); desc="Splitting train and test datasets ")
-    update!(prog, 0)
-    
+    if progress
+        prog = ParallelProgress(length(full_site_files); 
+                                desc = "Splitting train and test datasets ")
+        update!(prog, 0)
+    end
 
     pmap(full_site_files) do full_site_file 
         train_test_split(full_site_file, 
                          path_to_data_folder, 
                          path_to_test_periods_csv)
         delete_files && rm(joinpath(path_to_data_folder, full_site_file))
-        next!(prog)
+        progress && next!(prog)
     end
-
-    # @showprogress for full_site_file in full_site_files
-    #     train_test_split(full_site_file, 
-    #                      path_to_data_folder, 
-    #                      path_to_test_periods_csv)
-    #     delete_files && rm(joinpath(path_to_data_folder, full_site_file))
-    # end
-    return nothing
+    return
 end
 
 function train_test_split(site_file::String, 
@@ -222,7 +218,7 @@ function train_test_split(site_file::String,
                           path_to_test_periods_csv::String)
     
     
-    test_periods = CSV.read(path_to_test_periods_csv)
+    global test_periods = CSV.read(path_to_test_periods_csv)
     date_format = dateformat"y-m-dTH:M:S+z"
     site_id = parse(Int, match(r"(.*)\.csv.gz", site_file).captures[1])
 
