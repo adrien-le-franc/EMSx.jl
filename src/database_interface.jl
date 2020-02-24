@@ -218,7 +218,7 @@ function train_test_split(site_file::String,
                           path_to_test_periods_csv::String)
     
     
-    global test_periods = CSV.read(path_to_test_periods_csv)
+    test_periods = CSV.read(path_to_test_periods_csv)
     date_format = dateformat"y-m-dTH:M:S+z"
     site_id = parse(Int, match(r"(.*)\.csv.gz", site_file).captures[1])
 
