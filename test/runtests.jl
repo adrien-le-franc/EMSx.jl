@@ -81,13 +81,13 @@ end
                                                           periods = [1,2],
                                                           progress = false,
                                                           max_threads = 2))
-        @test all(isfile.(joinpath.([test_data_directory], string.(sites) .* ".csv.gz")))
+        @test all(isfile, joinpath.([test_data_directory], string.(sites) .* ".csv.gz"))
 
         @test isnothing(EMSx.initialize_data_parallel(test_data_directory, 
                                                       test_periods_path;
                                                       progress = false))
-        @test all(isfile.(joinpath.([test_data_test_directory test_data_train_directory], 
-                                    string.(sites) .* ".csv.gz")))
+        @test all(isfile, joinpath.([test_data_test_directory test_data_train_directory], 
+                                    string.(sites) .* ".csv.gz"))
 
         @test EMSx.simulate_sites_parallel(controller,
                                            test_data_save_directory, 
