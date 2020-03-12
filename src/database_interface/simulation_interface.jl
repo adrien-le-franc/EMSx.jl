@@ -23,7 +23,7 @@ function load_sites(path_to_metadata_csv::String,
 end
 
 function load_sites(path_to_data_folder::String)
-    path_to_metadata_csv = joinpath(@__DIR__, "..", "metadata")
+    path_to_metadata_csv = joinpath(DIR, "metadata")
     path_to_test_data_folder = joinpath(path_to_data_folder, "test")
     path_to_train_data_folder = joinpath(path_to_data_folder, "train")
     path_to_save_folder = joinpath(path_to_data_folder, "save")

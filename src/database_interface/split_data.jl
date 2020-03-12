@@ -3,7 +3,7 @@
 # functions to split data into train and test periods for the EMSx challenge
 
 
-make_directory(path::String) = if !isdir(path) mkpath(path) end
+make_directory(path::String) = isdir(path) || mkpath(path)
 
 function gzpack(file::String)
     if Sys.isunix()
@@ -22,8 +22,7 @@ function read_site_file(file::String; kw...)
 end
 
 function initialize_data(path_to_data_folder::String,
-                         path_to_test_periods_csv::String = joinpath(@__DIR__,
-                                                                     "..", 
+                         path_to_test_periods_csv::String = joinpath(DIR, 
                                                                      "metadata", 
                                                                      "test_periods.csv");
                          delete_files::Bool = true)
@@ -43,7 +42,7 @@ end
 
 function initialize_data_parallel(path_to_data_folder::String,
                                   path_to_test_periods_csv::String = 
-                                      joinpath(@__DIR__,"..","metadata","test_periods.csv");
+                                      joinpath(DIR, "metadata", "test_periods.csv");
                                   delete_files::Bool = true,
                                   progress::Bool = true)
     println()
