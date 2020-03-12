@@ -29,6 +29,8 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
 
   @testset "Preparing data" begin
 
+    @test haskey(ENV, "SCHNEIDER_API_KEY")
+
     @test isnothing(EMSx.download_sites_data(test_data_directory, 
                                              69:69; 
                                              periods = [1,2], 
