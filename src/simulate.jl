@@ -1,6 +1,6 @@
 # developed with Julia 1.1.1
 #
-# functions to simulate EMS 
+# functions to simulate an EMS 
 
 
 function simulate_sites(controller::AbstractController, 

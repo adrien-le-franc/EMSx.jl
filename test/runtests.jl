@@ -25,7 +25,9 @@ const test_prices_path = joinpath(test_metadata_directory, "edf_prices.csv")
 const test_metadata_path = joinpath(test_metadata_directory, "metadata.csv")
 const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
 
-@testset "Preparing data" begin
+@testset "EMSx.jl test set" begin
+
+  @testset "Preparing data" begin
 
     @test isnothing(EMSx.download_sites_data(test_data_directory, 
                                              69:69; 
@@ -37,9 +39,10 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
                                          test_periods_path))
     @test isfile(joinpath(test_data_test_directory, "69.csv.gz"))
     @test isfile(joinpath(test_data_train_directory, "69.csv.gz"))
-end
 
-@testset "EMS simulator's body" begin
+  end
+
+  @testset "EMS simulator's body" begin
     
     controller = EMSx.DummyController()
     price = EMSx.load_prices(test_prices_path)[1]
@@ -53,6 +56,7 @@ end
                          EMSx.read_site_file(site.path_to_test_data_csv), 
                          site, 
                          EMSx.Simulation[])
+
     @testset "Simulation" begin
 
         net_demand = period.data[98, :actual_consumption] - period.data[98, :actual_pv]
@@ -71,6 +75,7 @@ end
     end
 
     @testset "Parallel computing" begin
+
         @test EMSx.init_parallel(2) == workers()
         @test nworkers() == 2
         @test isnothing(@everywhere EMSx.DIR)
@@ -100,8 +105,8 @@ end
 
     end
 
+  end
+    
 end
-
-
 
 rm(test_data_directory, recursive=true)
