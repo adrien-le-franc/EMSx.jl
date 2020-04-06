@@ -19,6 +19,15 @@ Then, add the `EMSx.jl` package using Julia's [package manager](https://julialan
 ## Data
 The microgrid control simulation relies on [data](https://shop.exchange.se.com/apps/52535/microgrid-energy-management-benchmark#!overview) provided by Schneider Electric. 
 
+`EMSx.jl` provides functions for downloading the dataset:
+
+1. make an account and login to Schneider's [platform](https://data.exchange.se.com)
+2. generate an API key from your [account](https://data.exchange.se.com/account/api-keys/)
+3. set an environment variable with your API key: `SCHNEIDER_API_KEY = XXX` 
+4. just call `EMSx.download_sites_data(path_to_data_folder, 1:70)` to download all 70 sites
+
+Note that the data is compressed to .gz file and that downloading the total amount of data requires about 5GB of disk space.
+
 ## Using EMSx.jl
 `EMSx.jl` is a package for simulating the control of an electric microgrid on testing periods of one week. We have a pool of 70 microgrids with data. Each microgrid is composed with 
 
