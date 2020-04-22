@@ -11,12 +11,12 @@ using ProgressMeter
 
 function calibrate_sites(controller::EMSx.AbstractController,
     path_to_save_folder::String, 
-    path_to_price_folder::String, 
+    path_to_price_csv_file::String, 
     path_to_metadata_csv_file::String, 
     path_to_train_data_folder::String)
     
     EMSx.make_directory(joinpath(path_to_save_folder, "value_functions"))
-    prices = EMSx.load_prices(path_to_price_folder)
+    prices = EMSx.load_prices(path_to_price_csv_file)
     sites = EMSx.load_sites(path_to_metadata_csv_file, nothing,
         path_to_train_data_folder, path_to_save_folder)
 
@@ -24,7 +24,8 @@ function calibrate_sites(controller::EMSx.AbstractController,
 
     @showprogress for site in sites
         
-        elapsed += @elapsed site_value_functions = calibrate_site(controller, site, prices)
+        elapsed += @elapsed site_value_functions = calibrate_site(controller, 
+            site, prices)
         
     end
 
@@ -35,24 +36,15 @@ function calibrate_sites(controller::EMSx.AbstractController,
 end
 
 function calibrate_site(controller::EMSx.AbstractController, site::EMSx.Site, 
-    prices::Array{EMSx.Price})
+    prices::EMSx.Prices)
 
-    controller = EMSx.initialize_site_controller(controller, site)
+    controller = EMSx.initialize_site_controller(controller, site, prices)
+
+    timer = @elapsed value_function = compute_value_functions(controller)
     
-    value_functions = Dict{String, Any}()
-    timer = Float64[]
-
-    for price in prices
-
-        EMSx.update_price!(controller, price)
-        timing = @elapsed value_functions[price.name] = compute_value_functions(controller)
-        push!(timer, timing)
-
-    end
-
     save(joinpath(site.path_to_save_folder, "value_functions", site.id*".jld"), 
-        Dict("value_functions"=>value_functions, "time"=>timer))
+        Dict("value_function"=>value_function, "time"=>timer))
 
     return nothing
-
+    
 end 

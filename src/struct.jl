@@ -77,7 +77,7 @@ mutable struct Period
 end
 
 
-struct Price
+struct Prices
     name::String
     buy::Array{Float64,1}
     sell::Array{Float64,1}
@@ -91,12 +91,12 @@ struct Information
     forecast_pv::Array{Float64,1}
     load::Array{Float64,1}
     forecast_load::Array{Float64,1}
-    price::Price
+    prices::Prices
     battery::Battery
     site_id::String
 end
 
-function Information(t::Int64, price::Price, period::Period, soc::Float64)
+function Information(t::Int64, prices::Prices, period::Period, soc::Float64)
 
     data = sort!(period.data[t+1:t+96, :], rev=true)
     pv = data[!, :actual_pv]
@@ -104,7 +104,7 @@ function Information(t::Int64, price::Price, period::Period, soc::Float64)
     load = data[!, :actual_consumption]
     forecast_load = data[end, 6:101]
 
-    return Information(t, soc, pv, forecast_pv, load, forecast_load, price, period.site.battery, 
+    return Information(t, soc, pv, forecast_pv, load, forecast_load, prices, period.site.battery, 
         period.site.id)
 
 end

@@ -57,7 +57,6 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
     period = EMSx.Period("1", 
                          EMSx.read_site_file(site.path_to_test_data_csv), 
                          site) 
-                         #EMSx.Simulation[])
 
     @testset "Simulation" begin
 
@@ -65,8 +64,7 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
         @test EMSx.apply_control(1, 672, prices, period, 0., 0.) == (net_demand*prices.buy[1], 0.)
         simulation =  EMSx.simulate_period(controller, period, prices)
         @test simulation.result.soc == zeros(672)
-        #@test EMSx.simulate_period!(controller, period, [prices]) == nothing
-
+        
         @test EMSx.simulate_site(controller, site, prices) == nothing 
         @test EMSx.simulate_sites(controller,
                                   test_data_save_directory, 

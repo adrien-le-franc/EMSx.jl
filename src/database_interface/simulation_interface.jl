@@ -47,53 +47,20 @@ function load_prices(path_to_csv::String)
     end
 
     name = splitext(basename(path_to_csv))[1]
-    prices = Price(name, prices[!, :buy], prices[!, :sell])
+    prices = Prices(name, prices[!, :buy], prices[!, :sell])
 
     return prices
 
 end
-
-"""
-function load_prices(path_to_prices::String)
-
-    prices = Price[]
-
-    if !isdir(path_to_prices)
-        name = splitext(basename(path_to_prices))[1]
-        data_frame = load_prices_csv(path_to_prices)
-        push!(prices, Price(name, data_frame[!, :buy], data_frame[!, :sell]))
-    else
-        for file in readdir(path_to_prices)
-            name = splitext(basename(path_to_prices))[1]
-            data_frame = load_prices_csv(joinpath(path_to_prices, file))
-            push!(prices, Price(name, data_frame[!, :buy], data_frame[!, :sell]))   
-        end
-    end
-
-    return prices
-
-end
-"""
 
 function load_site_test_data(site::Site)
     test_data = read_site_file(site.path_to_test_data_csv, copycols = true)
     site_hidden_test_data = Site(site.id, 
                                  site.battery, 
-                                 nothing, 
+                                 nothing, # hide path to test data to the controller
                                  site.path_to_train_data_csv, 
                                  site.path_to_save_folder)
     return test_data, site_hidden_test_data
 end
 
-load_site_data(site::Site) = load_site_test_data(site) # too avoid code breaks
-
-
-function load_site_train_data(site::Site)
-    train_data = read_site_file(site.path_to_train_data_csv, copycols = true)
-    site_hidden_train_data = Site(site.id, 
-                                 site.battery, 
-                                 site.path_to_test_data_csv, 
-                                 nothing, 
-                                 site.path_to_save_folder)
-    return train_data, site_hidden_train_data
-end
+load_site_data(site::Site) = load_site_test_data(site) # to avoid code breaks

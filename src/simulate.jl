@@ -63,10 +63,10 @@ end
 
 function simulate_site(controller::AbstractController, 
                        site::Site, 
-                       prices::Price)
+                       prices::Prices)
     
     test_data, site = load_site_data(site)
-    controller = initialize_site_controller(controller, site)
+    controller = initialize_site_controller(controller, site, prices)
     periods = unique(test_data[!, :period_id])
     simulations = Simulation[]
 
@@ -75,8 +75,6 @@ function simulate_site(controller::AbstractController,
         test_data_period = test_data[test_data.period_id .== period_id, :]
         period = Period(string(period_id), test_data_period, site)
         simulation = simulate_period(controller, period, prices)
-
-        #simulate_period!(controller, period, prices)
         push!(simulations, simulation)
 
     end
@@ -87,27 +85,9 @@ function simulate_site(controller::AbstractController,
 
 end
 
-"""
-function simulate_period!(controller::AbstractController, 
-                          period::Period, 
-                          prices::Array{Price})
-
-    for price in prices
-
-        update_price!(controller, price)
-        simulation = simulate_scenario(controller, period, price)
-        push!(period.simulations, simulation)
-
-    end
-
-    return nothing
-
-end
-"""
-
 function simulate_period(controller::AbstractController, 
                            period::Period, 
-                           prices::Price) 
+                           prices::Prices) 
 
     horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period data
     id = Id(period.site.id, period.id, prices.name, string(typeof(controller)))
@@ -134,7 +114,7 @@ function simulate_period(controller::AbstractController,
 end
 
 function apply_control(t::Int64, horizon::Int64, 
-                       prices::Price, period::Period, 
+                       prices::Prices, period::Period, 
                        soc::Float64, control::Float64)
     """
     note on the load and pv values:

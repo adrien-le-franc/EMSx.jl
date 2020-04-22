@@ -2,13 +2,13 @@
 #
 # functions for simulating micro grid control
 
-function compute_stage_cost(battery::Battery, price::Price, t::Int64, 
+function compute_stage_cost(battery::Battery, prices::Prices, t::Int64, 
     control::Float64, net_energy_demand::Float64)
 
     control = control*battery.power*0.25
     imported_energy = (control + net_energy_demand)
-    return (price.buy[t]*max(0.,imported_energy) 
-        - price.sell[t]*max(0.,-imported_energy))
+    return (prices.buy[t]*max(0.,imported_energy) 
+        - prices.sell[t]*max(0.,-imported_energy))
 
 end
 
@@ -35,7 +35,7 @@ end
 
 ### hackable functions
 
-function initialize_site_controller(controller::AbstractController, site::Site)
+function initialize_site_controller(controller::AbstractController, site::Site, prices::Prices)
     """
     hackable function to update site dependent data and parameters
     and initialize the controller
@@ -43,13 +43,9 @@ function initialize_site_controller(controller::AbstractController, site::Site)
     return DummyController()
 end
 
-function update_price!(controller::AbstractController, price::Price)
-    """
-    hackable function to update price dependent data and parameters
-    """
-    return nothing
-end
-
 function compute_control(controller::AbstractController, information::Information)
+    """
+    hackable function to implement the control technique of the controller
+    """
     return 0. 
 end

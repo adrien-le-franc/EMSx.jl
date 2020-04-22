@@ -22,7 +22,6 @@ args = parse_commandline()
 
 mutable struct Sdp <: EMSx.AbstractController
    model::StoOpt.SDP
-   price::EMSx.Price
    value_functions::Union{StoOpt.ArrayValueFunctions, Nothing}
    Sdp() = new()
 end
@@ -35,7 +34,7 @@ const dx = 0.1
 const du = 0.1
 const horizon = 672 
 
-function EMSx.initialize_site_controller(controller::Sdp, site::EMSx.Site)
+function EMSx.initialize_site_controller(controller::Sdp, site::EMSx.Site, prices::EMSx.Prices)
 
     controller = Sdp()
 
@@ -54,8 +53,7 @@ function EMSx.initialize_site_controller(controller::Sdp, site::EMSx.Site)
     noise::Array{Float64,1})
         control = control[1]*site.battery.power*0.25
         imported_energy = control + noise[1]
-        return (controller.price.buy[t]*max(0.,imported_energy) - 
-            controller.price.sell[t]*max(0.,-imported_energy))
+        return (prices.buy[t]*max(0.,imported_energy) - prices.sell[t]*max(0.,-imported_energy))
     end
 
     model = StoOpt.SDP(Grid(0:dx:1, enumerate=true),
@@ -71,10 +69,6 @@ function EMSx.initialize_site_controller(controller::Sdp, site::EMSx.Site)
     
 end
 
-function EMSx.update_price!(controller::Sdp, price::EMSx.Price)
-    controller.price = price
-end
-
 ## calibration specific function
 
 function compute_value_functions(controller::Sdp)
@@ -83,18 +77,17 @@ end
 
 ## simulation specific functions
 
-function load_value_functions(site_id::String, price_name::String)
+function load_value_functions(site_id::String)
     return load(joinpath(args["save"],
                 "sdp", 
                 "value_functions", 
-                site_id*".jld"))["value_functions"][price_name]
+                site_id*".jld"))["value_function"]
 end
 
 function EMSx.compute_control(controller::Sdp, information::EMSx.Information)
     
     if information.t == 1
-        controller.value_functions = load_value_functions(information.site_id, 
-                information.price.name)
+        controller.value_functions = load_value_functions(information.site_id)
     end
 
     control = compute_control(controller.model, information.t, [information.soc],

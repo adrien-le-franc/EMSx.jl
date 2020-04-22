@@ -5,6 +5,7 @@
 # https://github.com/adrien-le-franc/StoOpt.jl
 
 
+using EMSx
 using StoOpt
 
 using CSV, DataFrames, Dates
@@ -28,7 +29,7 @@ function net_demand_offline_law(path_to_data_csv::String; k::Int64=10)
     :probability -> Arra{Float64,1} ; probabilities of each scalar value
     """
 
-    data = CSV.read(path_to_data_csv)
+    data = EMSx.read_site_file(path_to_data_csv)
     sorted_data = parse_data_frame(data)
     offline_law_data_frames = data_to_offline_law(sorted_data, k=k)
 

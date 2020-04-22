@@ -35,7 +35,7 @@ function parse_commandline()
         "--price"
             help = "price folder or .csv file"
             arg_type = String
-            default = joinpath(@__DIR__, "../data/prices")
+            default = joinpath(@__DIR__, "../data/prices/edf_prices.csv")
 
         "--calibrate"
             help = "perform model calibration - SDP only"
