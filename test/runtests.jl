@@ -47,7 +47,7 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
   @testset "EMS simulator's body" begin
     
     controller = EMSx.DummyController()
-    price = EMSx.load_prices(test_prices_path)[1]
+    prices = EMSx.load_prices(test_prices_path)
     
     site = EMSx.load_sites(test_metadata_path, 
                            test_data_test_directory, 
@@ -56,18 +56,18 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
     
     period = EMSx.Period("1", 
                          EMSx.read_site_file(site.path_to_test_data_csv), 
-                         site, 
-                         EMSx.Simulation[])
+                         site) 
+                         #EMSx.Simulation[])
 
     @testset "Simulation" begin
 
         net_demand = period.data[98, :actual_consumption] - period.data[98, :actual_pv]
-        @test EMSx.apply_control(1, 672, price, period, 0., 0.) == (net_demand*price.buy[1], 0.)
-        simulation =  EMSx.simulate_scenario(controller, period, price)
+        @test EMSx.apply_control(1, 672, prices, period, 0., 0.) == (net_demand*prices.buy[1], 0.)
+        simulation =  EMSx.simulate_period(controller, period, prices)
         @test simulation.result.soc == zeros(672)
-        @test EMSx.simulate_period!(controller, period, [price]) == nothing
+        #@test EMSx.simulate_period!(controller, period, [prices]) == nothing
 
-        @test EMSx.simulate_site(controller, site, [price]) == nothing 
+        @test EMSx.simulate_site(controller, site, prices) == nothing 
         @test EMSx.simulate_sites(controller,
                                   test_data_save_directory, 
                                   test_prices_path, 

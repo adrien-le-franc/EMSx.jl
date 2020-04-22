@@ -83,7 +83,7 @@ function download_site_csv(siteid::Int,
     end
 
     @assert haskey(ENV, "SCHNEIDER_API_KEY") "you did not provide your api key"* 
-            "please set it with: ENV[\"SCHNEIDER_API_KEY\"] = *your api key*"
+            " please set it with: ENV[\"SCHNEIDER_API_KEY\"] = *your api key*"
     
     headers = Dict("Authorization" => "Apikey "*ENV["SCHNEIDER_API_KEY"])
     

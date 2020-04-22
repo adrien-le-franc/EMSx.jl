@@ -31,7 +31,7 @@ function load_sites(path_to_data_folder::String)
                       path_to_train_data_folder, path_to_save_folder)
 end
 
-function load_prices_csv(path_to_csv::String)
+function load_prices(path_to_csv::String)
 
     prices = CSV.read(path_to_csv)
 
@@ -46,10 +46,14 @@ function load_prices_csv(path_to_csv::String)
         end
     end
 
+    name = splitext(basename(path_to_csv))[1]
+    prices = Price(name, prices[!, :buy], prices[!, :sell])
+
     return prices
 
 end
 
+"""
 function load_prices(path_to_prices::String)
 
     prices = Price[]
@@ -69,6 +73,7 @@ function load_prices(path_to_prices::String)
     return prices
 
 end
+"""
 
 function load_site_test_data(site::Site)
     test_data = read_site_file(site.path_to_test_data_csv, copycols = true)

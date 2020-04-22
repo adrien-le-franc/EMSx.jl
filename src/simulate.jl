@@ -5,13 +5,13 @@
 
 function simulate_sites(controller::AbstractController, 
                         path_to_save_folder::String,
-                        path_to_price_folder::String, 
+                        path_to_price_csv_file::String, 
                         path_to_metadata_csv_file::String, 
                         path_to_test_data_folder::String,
                         path_to_train_data_folder::Union{String, Nothing}=nothing)
     
     make_directory(path_to_save_folder)
-    prices = load_prices(path_to_price_folder)
+    prices = load_prices(path_to_price_csv_file)
     sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, 
         path_to_train_data_folder, path_to_save_folder)
 
@@ -19,7 +19,7 @@ function simulate_sites(controller::AbstractController,
 
     for site in sites
         
-        elapsed += @elapsed simulate_site(controller, site, prices) 
+        elapsed += @elapsed simulate_site(controller, site, prices)
 
     end
 
@@ -63,7 +63,7 @@ end
 
 function simulate_site(controller::AbstractController, 
                        site::Site, 
-                       prices::Array{Price})
+                       prices::Price)
     
     test_data, site = load_site_data(site)
     controller = initialize_site_controller(controller, site)
@@ -73,9 +73,11 @@ function simulate_site(controller::AbstractController,
     @showprogress for period_id in periods
 
         test_data_period = test_data[test_data.period_id .== period_id, :]
-        period = Period(string(period_id), test_data_period, site, Simulation[])
-        simulate_period!(controller, period, prices)
-        append!(simulations, period.simulations)
+        period = Period(string(period_id), test_data_period, site)
+        simulation = simulate_period(controller, period, prices)
+
+        #simulate_period!(controller, period, prices)
+        push!(simulations, simulation)
 
     end
 
@@ -85,6 +87,7 @@ function simulate_site(controller::AbstractController,
 
 end
 
+"""
 function simulate_period!(controller::AbstractController, 
                           period::Period, 
                           prices::Array{Price})
@@ -100,23 +103,26 @@ function simulate_period!(controller::AbstractController,
     return nothing
 
 end
+"""
 
-function simulate_scenario(controller::AbstractController, 
+function simulate_period(controller::AbstractController, 
                            period::Period, 
-                           price::Price) 
+                           prices::Price) 
 
     horizon = size(period.data, 1) - 96 # test data: 24h of history lag + period data
-    id = Id(period.site.id, period.id, price.name, string(typeof(controller)))
+    id = Id(period.site.id, period.id, prices.name, string(typeof(controller)))
     state_of_charge = 0.
     result = Result(horizon)
     timer = zeros(horizon)
 
     for t in 1:horizon 
 
-        information = Information(t, price, period, state_of_charge)
+        information = Information(t, prices, period, state_of_charge)
         timing = @elapsed control = compute_control(controller, information)
 
-        stage_cost, state_of_charge = apply_control(t, horizon, price, period, state_of_charge, control)
+        stage_cost, state_of_charge = apply_control(t, horizon, prices, period, 
+            state_of_charge, control)
+
         result.cost[t] = stage_cost
         result.soc[t] = state_of_charge
         timer[t] = timing
@@ -128,7 +134,7 @@ function simulate_scenario(controller::AbstractController,
 end
 
 function apply_control(t::Int64, horizon::Int64, 
-                       price::Price, period::Period, 
+                       prices::Price, period::Period, 
                        soc::Float64, control::Float64)
     """
     note on the load and pv values:
@@ -140,7 +146,7 @@ function apply_control(t::Int64, horizon::Int64,
     pv = period.data[!, :actual_pv][min(t+96+1, horizon+96)] 
     net_energy_demand = load-pv
 
-    stage_cost = compute_stage_cost(period.site.battery, price, t, control, net_energy_demand)
+    stage_cost = compute_stage_cost(period.site.battery, prices, t, control, net_energy_demand)
     new_state_of_charge = compute_stage_dynamics(period.site.battery, soc, control)
 
     return stage_cost, new_state_of_charge

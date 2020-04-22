@@ -74,7 +74,6 @@ mutable struct Period
     id::String
     data::DataFrame
     site::Site
-    simulations::Array{Simulation}
 end
 
 
