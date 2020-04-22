@@ -23,6 +23,7 @@ function simulate_sites(controller::AbstractController,
 
     end
 
+    group_all_simulations(sites)
     println("Terminating model simulation in $(elapsed) seconds")
 
     return nothing
@@ -58,6 +59,8 @@ function simulate_sites_parallel(controller::EMSx.AbstractController,
             end
         end
     end
+
+    group_all_simulations(sites)
 
 end
 

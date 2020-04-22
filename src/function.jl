@@ -23,14 +23,30 @@ function compute_stage_dynamics(battery::Battery, state::Float64, control::Float
 end
 
 function save_simulations(site::Site, simulations::Array{Simulation})
-    path_to_score = joinpath(site.path_to_save_folder, "score.jld")
-    if isfile(path_to_score)
-        file = load(path_to_score)
-    else
-        file = Dict()
+    path_to_score = joinpath(site.path_to_save_folder, site.id*".jld")
+    save(path_to_score, "simulations", simulations)
+end
+
+function group_all_simulations(sites::Array{Site})
+
+    scores = Dict()
+
+    for site in sites
+
+        path_to_score = joinpath(site.path_to_save_folder, site.id*".jld")
+        simulation = load(path_to_score, "simulations")
+        scores[site.id] = simulation
+
     end
-    file[site.id] = simulations
-    save(path_to_score, file)
+
+    save(joinpath(sites[1].path_to_save_folder, "score.jld"), scores)
+
+    if isfile(joinpath(sites[1].path_to_save_folder, "score.jld"))
+        for site in sites
+            rm(joinpath(site.path_to_save_folder, site.id*".jld"))
+        end
+    end
+
 end
 
 ### hackable functions
