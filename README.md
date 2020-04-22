@@ -10,7 +10,7 @@
 [codecov-img]: https://codecov.io/gh/adrien-le-franc/EMSx.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/adrien-le-franc/EMSx.jl
 
-`EMSx.jl` is a Julia package for simulating the control of an electric microgrid with an Energy Management System. It originated from a joint project between [CERMICS](https://cermics-lab.enpc.fr/), [Efficacity](https://www.efficacity.com/) and [Schneider Electric](https://www.se.com/fr/fr/). This packaged was motivated by a benchmark on EMS techniques which is documented in [this paper](https://hal.archives-ouvertes.fr/hal-02425913/document).
+`EMSx.jl` is a Julia package for simulating the control of an electric microgrid with an Energy Management System. It originated from a joint project between [CERMICS](https://cermics-lab.enpc.fr/), [Efficacity](https://www.efficacity.com/) and [Schneider Electric](https://www.se.com/fr/fr/). This package is designed for benchmarking EMS techniques, as documented in [this paper](https://hal.archives-ouvertes.fr/hal-02425913/document).
 
 ## Installation
 If not installed, download [Julia 1.3.0](https://julialang.org/downloads/) or higher versions. 
@@ -28,9 +28,9 @@ The microgrid control simulation relies on [data](https://shop.exchange.se.com/a
 
 Note that the data is compressed to .gz file and that downloading the total amount of data requires about 5GB of disk space.
 
-5. finally, perform the train/test data partitioning by running `EMSx.initialize_data(path_to_data_folder, metadata/test_periods.csv))`. By default, pre-partitioning data files are deleted to save disk space. You can choose to keep them with the keyword `delete_files=false`.
+5. finally, perform the train/test data partitioning by running `EMSx.initialize_data(path_to_data_folder)`. By default, pre-partitioning data files are deleted to save disk space. You can choose to keep them with the keyword `delete_files=false`.
 
-Due to the large volume of data, steps 4. and 5. can be time consuming. We provide parallelization options for these steps.
+Due to the large volume of data, steps 4. and 5. can be time consuming. We provide [parallelization options](#parallelization) for these steps.
 
 
 ## Using EMSx.jl
@@ -79,8 +79,8 @@ The behavior of `DummyController` is specified by the corresponding method of th
 ## Parallelization
 `EMSx.jl` provides functions for distributed processing. Before calling a parallelized operation, initialize workers with `EMSx.init_parallel(n_workers)`. The following functions make use of parallelization:
 
-* `EMSx.download_sites_data_parallel` implemented [here](src/database_interface/download_data.jl)
-* `EMSx.initialize_data_parallel` implemented [here](src/database_interface/split_data.jl)
-* `EMSx.simulate_sites_parallel` implemented [here](src/simulate.jl)
+* [`EMSx.download_sites_data_parallel`](src/database_interface/download_data.jl)
+* [`EMSx.initialize_data_parallel`](src/database_interface/split_data.jl)
+* [`EMSx.simulate_sites_parallel`](src/simulate.jl)
 
 <img src="docs/logos.png" width="500" />
