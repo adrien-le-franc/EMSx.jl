@@ -36,7 +36,7 @@ Due to the large volume of data, steps 4. and 5. can be time consuming. We provi
 ## Using EMSx.jl
 `EMSx.jl` is a package for simulating the control of an electric microgrid on testing periods of one week. We have a pool of 70 microgrids with data. Each microgrid is composed with 
 
-* a photovoltaic (PV) generating unit ,
+* a photovoltaic (PV) generating unit,
 * a battery,
 * a delivery point to exchange power with the grid,
 * electric devices, resulting in a aggregated local load.
