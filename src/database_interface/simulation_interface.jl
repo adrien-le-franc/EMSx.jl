@@ -35,7 +35,7 @@ function load_prices(path_to_csv::String)
 
     prices = CSV.read(path_to_csv)
 
-    if !(names(prices) == [:timestamp, :buy, :sell] && size(prices, 1) == 672)
+    if !(names(prices) == ["timestamp", "buy", "sell"] && size(prices, 1) == 672)
         error("price DataFrame at $(path_to_csv) is not in expected shape")
     end
 

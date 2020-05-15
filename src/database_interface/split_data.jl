@@ -11,7 +11,7 @@ function gzpack(file::String)
     end
     if Sys.iswindows()
         exe7z = ENV["7ZPATH"]
-        run(`$exe7z a $(file).gz $(file)`)
+        run(`$exe7z a $(file).gz $(file) -bb0 -bd -bso0 -bsp0`) # only shows errors
     end
 end
 

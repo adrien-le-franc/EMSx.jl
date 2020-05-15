@@ -17,6 +17,7 @@ TimeZones = "f269a46b-ccf7-5d73-abea-4c690281aa53"
 
 [compat]
 julia = "1"
+DataFrames = "0.21"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
