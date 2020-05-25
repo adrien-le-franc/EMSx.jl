@@ -30,6 +30,8 @@ Note that the data is compressed to .gz file and that downloading the total amou
 
 5. finally, perform the train/test data partitioning by running `EMSx.initialize_data(path_to_data_folder)`. By default, pre-partitioning data files are deleted to save disk space. You can choose to keep them with the keyword `delete_files=false`.
 
+Note for windows users: you need to install [7-Zip](https://www.7-zip.org/download.html) and [add its folder to the path](https://docs.telerik.com/teststudio/features/test-runners/add-path-environment-variables) (default is `C:\Program Files\7-Zip\`)
+
 Due to the large volume of data, steps 4. and 5. can be time consuming. We provide [parallelization options](#parallelization) for these steps.
 
 

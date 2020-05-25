@@ -10,7 +10,7 @@ function gzpack(file::String)
         run(`gzip $(file)`)
     end
     if Sys.iswindows()
-        run(`$exe7z x $(file) $(file).gz`)
+        run(`7z a $(file).gz $(file) -bso0 -bsp0`) # only shows errors
     end
 end
 
