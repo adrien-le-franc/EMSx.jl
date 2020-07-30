@@ -6,7 +6,6 @@ using EMSx
 using CSV
 using Distributed
 using Test
-using Debugger
 
 const test_directory = @__DIR__
 
