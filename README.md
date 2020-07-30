@@ -33,7 +33,6 @@ Note for windows users: you need to install [7-Zip](https://www.7-zip.org/downlo
 
 Due to the large volume of data, steps 4. and 5. can be time consuming. We provide [parallelization options](#parallelization) for these steps.
 
-
 ## Using EMSx.jl
 `EMSx.jl` is a package for simulating the control of an electric microgrid on testing periods of one week. We have a pool of 70 microgrids with data. Each microgrid is composed with 
 
@@ -76,6 +75,25 @@ EMSx.simulate_sites(controller,
 ```
 The behavior of `DummyController` is specified by the corresponding method of the `compute_control` function. For more complex controllers, you might also want to implement a specific method for the
 `initialize_site_controller` function. We refer to [examples](https://github.com/adrien-le-franc/EMSx.jl/tree/master/examples) for more complex usages.
+
+## Performance 
+The performance of a controller on the EMSx benchmark is measured relatively to the performance of 
+
+* a dummy controller, which does not use the battery 
+* an anticipative controller, which has full knowledge of the future energy net demand 
+
+Such baseline controllers allow us to compute performance metrics based on the `score.jld` file saved after running a simulation:
+```julia
+julia> performance_metrics = EMSx.evaluate_model("/home/xxx/model/score.jld")
+3×4 DataFrame
+│ Row │ site   │ cost    │ gain    │ score    │
+│     │ String │ Float64 │ Float64 │ Float64  │
+├─────┼────────┼─────────┼─────────┼──────────┤
+│ 1   │ 1      │ 4351.99 │ 109.015 │ 0.739589 │
+│ 2   │ 3      │ 536.232 │ 18.0276 │ 0.705637 │
+│ 3   │ 4      │ 9025.46 │ 136.477 │ 0.681385 │
+```
+Here, for each site, each metrics is averaged over the pool of simulation periods: `cost` refers to the raw operating cost, `gain` refers to the gain of the model against a dummy controller, `score` refers to the gain of the model standardized by the gain of an anticipative controller (e.g. in the code snippet above, the model achieves 68% of the anticipative gain on site 4). We refer to [this paper](https://hal.archives-ouvertes.fr/hal-02425913/document) for more details on our performance metrics.
 
 ## Parallelization
 `EMSx.jl` provides functions for distributed processing. Before calling a parallelized operation, initialize workers with `EMSx.init_parallel(n_workers)`. The following functions make use of parallelization:

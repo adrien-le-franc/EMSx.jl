@@ -5,6 +5,7 @@ using Distributed
 using Dates, TimeZones, CSV, DataFrames, CodecZlib, Mmap
 using JLD
 using HTTP
+using Statistics
 
 const DIR = dirname(@__DIR__)
 
@@ -19,5 +20,6 @@ include("parallel.jl")
 
 include("function.jl")
 include("simulate.jl") 
+include("evaluate.jl")
 
 end 

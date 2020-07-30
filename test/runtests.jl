@@ -9,6 +9,7 @@ using Test
 
 const test_directory = @__DIR__
 
+const package_directory = joinpath(test_directory, "..")
 const test_data_directory = joinpath(test_directory, "data")
 const test_metadata_directory = joinpath(test_directory, "metadata")
 
@@ -73,6 +74,16 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
                                   test_metadata_path, 
                                   test_data_test_directory, 
                                   nothing) == nothing 
+    end
+
+    @testset "Evaluation" begin
+        
+      average_costs = EMSx.average_cost_per_site(joinpath(test_data_save_directory, "score.jld"))
+      performance_metrics = EMSx.evaluate_model(joinpath(test_data_save_directory, "score.jld"))
+
+      @test isapprox(average_costs[!, :dummy][1], 7444.801871465684)
+      @test isapprox(performance_metrics[!, :gain][1], -1940.8319533558906)
+
     end
 
     @testset "Parallel computing" begin
