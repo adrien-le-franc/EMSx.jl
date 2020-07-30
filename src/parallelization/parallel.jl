@@ -1,3 +1,6 @@
+# developed with Julia 1.1.1
+#
+# function to initialize parallel computing
 
 function init_parallel(n::Integer = Sys.CPU_THREADS; kw...)
     if n < 1

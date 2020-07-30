@@ -1,3 +1,7 @@
+# developed with Julia 1.1.1
+#
+# functions for displaying progress in parallel computing 
+
 import ProgressMeter: next!, finish!, cancel, update!
 import Distributed: RemoteChannel, put!
 
