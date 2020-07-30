@@ -121,7 +121,7 @@ function apply_control(t::Int64, horizon::Int64,
                        soc::Float64, control::Float64)
     """
     note on the load and pv values:
-    at the end of the period values at t+1 cannot be accessed, replaced by values at t=horizon
+    at the end of the period, values at t+1 cannot be accessed: replaced by values at t=horizon
     with a minor impact since the optimal control is to empty the battery anyway
     """
     

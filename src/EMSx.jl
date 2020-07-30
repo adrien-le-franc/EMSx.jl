@@ -2,7 +2,7 @@ module EMSx
 
 using ProgressMeter 
 using Distributed
-using Dates, TimeZones, CSV, DataFrames, CodecZlib
+using Dates, TimeZones, CSV, DataFrames, CodecZlib, Mmap
 using JLD
 using HTTP
 

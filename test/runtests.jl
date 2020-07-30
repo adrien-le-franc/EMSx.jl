@@ -6,6 +6,7 @@ using EMSx
 using CSV
 using Distributed
 using Test
+using Debugger
 
 const test_directory = @__DIR__
 
@@ -24,6 +25,7 @@ EMSx.make_directory(test_data_save_directory)
 const test_prices_path = joinpath(test_metadata_directory, "edf_prices.csv")
 const test_metadata_path = joinpath(test_metadata_directory, "metadata.csv")
 const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
+
 
 @testset "EMSx.jl test set" begin
 

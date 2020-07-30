@@ -15,9 +15,10 @@ function gzpack(file::String)
 end
 
 function read_site_file(file::String; kw...)
-    f = open(file)
-    csv = CSV.read(GzipDecompressorStream(f); kw...)
-    close(f)
+    csv = CSV.File(transcode(GzipDecompressor, Mmap.mmap(file))) |> DataFrame
+    #f = open(file)
+    #csv = CSV.read(GzipDecompressorStream(f); kw...)
+    #close(f)
     return csv
 end
 
@@ -72,7 +73,7 @@ function train_test_split(site_file::String,
                           path_to_test_periods_csv::String)
     
     
-    test_periods = CSV.read(path_to_test_periods_csv)
+    test_periods = CSV.read(path_to_test_periods_csv, DataFrame)
     date_format = dateformat"y-m-dTH:M:S+z"
     site_id = parse(Int, match(r"(.*)\.csv.gz", site_file).captures[1])
 

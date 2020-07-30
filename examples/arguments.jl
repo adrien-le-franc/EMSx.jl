@@ -1,4 +1,4 @@
-# developed with Julia 1.1.1
+# developed with Julia 1.4.2
 #
 # arguments parsing for examples
 
@@ -10,7 +10,7 @@ function parse_commandline()
 
     s = ArgParseSettings()
 
-    @add_arg_table s begin
+    @add_arg_table! s begin
         
         "--save"
             help = "folder to save scores and/or models"

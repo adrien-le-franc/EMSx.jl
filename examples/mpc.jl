@@ -1,17 +1,15 @@
-# developed with Julia 1.3.0
+# developed with Julia 1.4.2
 #
 # EMS simulation with a MPC controller
 # the online computing of optimal controls is written in LP form
 #
 # this example can be run with any JuMP compatible LP solver
-# e.g replace CPLEX with Clp
+# e.g replace Clp with CPLEX
 
 
 using EMSx
-using JuMP, CPLEX
+using JuMP, Clp
 
-using MathOptInterface
-const MOI = MathOptInterface
 
 include("arguments.jl")
 
@@ -32,8 +30,8 @@ function EMSx.initialize_site_controller(controller::Mpc, site::EMSx.Site, price
     
     controller = Mpc()
 
-    model = Model(with_optimizer(CPLEX.Optimizer))
-    MOI.set(model, MOI.RawParameter("CPX_PARAM_SCRIND"), 0)
+    model = Model(Clp.Optimizer)
+    set_optimizer_attribute(model, "LogLevel", 0)
 
     horizon = 96
     battery = site.battery

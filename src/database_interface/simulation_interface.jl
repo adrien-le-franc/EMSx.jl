@@ -9,7 +9,7 @@ function load_sites(path_to_metadata_csv::String,
                     path_to_save_folder::String)
 
     sites = Site[]
-    metadata = CSV.read(path_to_metadata_csv)
+    metadata = CSV.read(path_to_metadata_csv, DataFrame)
     number_of_sites = size(metadata, 1)
 
     for row in 1:number_of_sites
@@ -33,7 +33,7 @@ end
 
 function load_prices(path_to_csv::String)
 
-    prices = CSV.read(path_to_csv)
+    prices = CSV.read(path_to_csv, DataFrame)
 
     if !(names(prices) == ["timestamp", "buy", "sell"] && size(prices, 1) == 672)
         error("price DataFrame at $(path_to_csv) is not in expected shape")
