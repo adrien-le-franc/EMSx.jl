@@ -40,8 +40,9 @@ function load_prices(path_to_csv::String)
     end
 
     if !(all(isa.(prices[!, :timestamp], Dates.Time)))
-        try prices[!, :timestamp] = Dates.Time.(prices[!, :timestamp])
-        catch error
+        try 
+            prices[!, :timestamp] = Dates.Time.(prices[!, :timestamp])
+        catch
             println("could not convert timestamp to Dates.Time")
         end
     end

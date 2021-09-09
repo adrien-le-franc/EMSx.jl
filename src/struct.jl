@@ -106,5 +106,4 @@ function Information(t::Int64, prices::Prices, period::Period, soc::Float64)
 
     return Information(t, soc, pv, forecast_pv, load, forecast_load, prices, period.site.battery, 
         period.site.id)
-
 end

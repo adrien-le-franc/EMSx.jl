@@ -95,19 +95,19 @@ function train_test_split(site_file::String,
     for period in periods
         df = data[data.period_id .== period, :]
         timestamp = df[1, :timestamp]
-        history_span = timestamp-Dates.Day(1):Dates.Minute(15):timestamp-Dates.Minute(15)
-        history = data[in(history_span).(data.timestamp), :]
-        history[!, :period_id] = period*ones(Int, 96)
+        history_span = timestamp-Day(1):Minute(15):timestamp-Minute(15)
+        history = data[data.timestamp .∈ Ref(history_span), :]
+        history[!, :period_id] = fill(period, 96)
         new_period = vcat(history, df)
         test_data = vcat(test_data, new_period)
     end
 
     test_file = joinpath(path_to_data_folder, "test", "$(site_id).csv")
-    write_site_file(test_file, test_data)
+    write_site_file(test_file, test_data; compressed=compressed)
     
     train_file = joinpath(path_to_data_folder, "train", "$(site_id).csv")
-    train_data = data[(!).(in(periods).(data.period_id)), :]
-    write_site_file(train_file, train_data)
+    train_data = data[data.period_id .∉ Ref(periods), :]
+    write_site_file(train_file, train_data; compressed=compressed)
 
     return nothing
 end

@@ -42,9 +42,19 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
     @test isfile(joinpath(test_data_directory, "69.csv.gz"))
 
     @test isnothing(EMSx.initialize_data(test_data_directory, 
-                                         test_periods_path))
+                                         test_periods_path,
+                                         delete_files=false,
+                                         compressed=true))
+    @test isfile(joinpath(test_data_directory, "69.csv.gz"))
     @test isfile(joinpath(test_data_test_directory, "69.csv.gz"))
     @test isfile(joinpath(test_data_train_directory, "69.csv.gz"))
+    @test isnothing(EMSx.initialize_data(test_data_directory, 
+                                         test_periods_path,
+                                         delete_files=true,
+                                         compressed=false))
+    @test !isfile(joinpath(test_data_directory, "69.csv.gz"))
+    @test isfile(joinpath(test_data_test_directory, "69.csv"))
+    @test isfile(joinpath(test_data_train_directory, "69.csv"))
 
   end
 
@@ -69,13 +79,13 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
         simulation =  EMSx.simulate_period(controller, period, prices)
         @test simulation.result.soc == zeros(672)
         
-        @test EMSx.simulate_site(controller, site, prices) == nothing 
+        @test EMSx.simulate_site(controller, site, prices) === nothing 
         @test EMSx.simulate_sites(controller,
                                   test_data_save_directory, 
                                   test_prices_path, 
                                   test_metadata_path, 
                                   test_data_test_directory, 
-                                  nothing) == nothing 
+                                  nothing) === nothing 
     end
 
     @testset "Evaluation" begin
@@ -83,8 +93,8 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
       average_costs = EMSx.average_cost_per_site(joinpath(test_data_save_directory, "score.jld"))
       performance_metrics = EMSx.evaluate_model(joinpath(test_data_save_directory, "score.jld"))
 
-      @test isapprox(average_costs[!, :dummy][1], 7444.801871465684)
-      @test isapprox(performance_metrics[!, :gain][1], -1940.8319533558906)
+      @test average_costs[!, :dummy][1] ≈ 7444.801871465684
+      @test performance_metrics[!, :gain][1] ≈ -1940.8319533558906
 
     end
 
@@ -101,7 +111,7 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
                                                           progress = false,
                                                           source = :schneider,
                                                           compressed = true))
-        @test all(isfile, joinpath.([test_data_directory], string.(sites) .* ".csv.gz"))
+        @test all(isfile, joinpath.(test_data_directory, string.(sites) .* ".csv.gz"))
 
         @test isnothing(EMSx.initialize_data_parallel(test_data_directory, 
                                                       test_periods_path;
@@ -114,7 +124,7 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
                                            test_prices_path, 
                                            test_metadata_path, 
                                            test_data_test_directory, 
-                                           nothing) == nothing
+                                           nothing) === nothing
 
         @test EMSx.init_parallel(1) == workers() == [1]
 
