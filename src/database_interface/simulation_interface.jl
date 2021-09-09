@@ -54,7 +54,7 @@ function load_prices(path_to_csv::String)
 end
 
 function load_site_test_data(site::Site)
-    test_data = read_site_file(site.path_to_test_data_csv, copycols = true)
+    test_data = read_site_file(site.path_to_test_data_csv)
     site_hidden_test_data = Site(site.id, 
                                  site.battery, 
                                  nothing, # hide path to test data to the controller

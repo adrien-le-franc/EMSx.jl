@@ -14,13 +14,13 @@ const test_data_directory = joinpath(test_directory, "data")
 const test_metadata_directory = joinpath(test_directory, "metadata")
 
 isdir(test_data_directory) && rm(test_data_directory, recursive=true)
-EMSx.make_directory(test_data_directory)
+mkpath(test_data_directory)
 
 const test_data_test_directory = joinpath(test_data_directory,"test")
 const test_data_train_directory = joinpath(test_data_directory,"train")
 const test_data_save_directory = joinpath(test_data_directory,"save")
 
-EMSx.make_directory(test_data_save_directory)
+mkpath(test_data_save_directory)
 
 const test_prices_path = joinpath(test_metadata_directory, "edf_prices.csv")
 const test_metadata_path = joinpath(test_metadata_directory, "metadata.csv")
@@ -29,14 +29,16 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
 
 @testset "EMSx.jl test set" begin
 
-  @testset "Preparing data" begin
+  @testset "Testing downloading data from Schneider" begin
 
     @test haskey(ENV, "SCHNEIDER_API_KEY")
 
     @test isnothing(EMSx.download_sites_data(test_data_directory, 
                                              69:69; 
                                              periods = [1,2], 
-                                             progress = false))
+                                             progress = false,
+                                             source = :schneider,
+                                             compressed = true))
     @test isfile(joinpath(test_data_directory, "69.csv.gz"))
 
     @test isnothing(EMSx.initialize_data(test_data_directory, 
@@ -95,9 +97,10 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
         sites = 1:3
         @test isnothing(EMSx.download_sites_data_parallel(test_data_directory,
                                                           sites;
-                                                          periods = [1,2],
+                                                          periods = [1,2], 
                                                           progress = false,
-                                                          max_threads = 2))
+                                                          source = :schneider,
+                                                          compressed = true))
         @test all(isfile, joinpath.([test_data_directory], string.(sites) .* ".csv.gz"))
 
         @test isnothing(EMSx.initialize_data_parallel(test_data_directory, 

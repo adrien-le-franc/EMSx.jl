@@ -1,5 +1,3 @@
-# developed with Julia 1.3.0
-#
 # functions to download the data from Schneider's database 
 
 
@@ -7,14 +5,14 @@ const SCHNEIDER_API = "https://data.exchange.se.com/explore/"
 const DATASET = "dataset/microgrid-energy-management-benchmark-time-series"
 
 function download_site_csv_from_schneider(siteid::Int, 
-                           path_to_data_folder::String, 
-                           compressed::Bool = true; 
+                           path_to_data_folder::String; 
+                           compressed::Bool = true,
                            periods::Union{Nothing, AbstractArray{Int}} = nothing,
                            progress = true, # true/false or Progress or ParallelProgress
                            api_key = get(ENV, "SCHNEIDER_API_KEY", nothing))
 
     if progress == true
-        file_size = get_file_size(siteid)
+        file_size = get_file_size(siteid, compressed)
         progress = Progress(file_size; desc = "Downloading $siteid.csv.gz ")
     elseif progress == false
         file_size = nothing

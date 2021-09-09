@@ -1,5 +1,3 @@
-# developed with Julia 1.3.0
-#
 # functions to download the data from Schneider's database 
 
 #! TODO: use correct ids when available
@@ -9,8 +7,8 @@ const ZENODO_ID = "5458943"
 const ZENODO_CONCEPT_ID = "3723281"
 
 function download_site_csv_from_zenodo(siteid::Int, 
-                           path_to_data_folder::String, 
-                           compressed::Bool = true; 
+                           path_to_data_folder::String;
+                           compressed::Bool = true,
                            periods::Union{Nothing, AbstractArray{Int}} = nothing,
                            progress = true, # true/false or Progress or ParallelProgress
                            api_key = get(ENV, "ZENODO_API_KEY", nothing),
@@ -45,7 +43,7 @@ function download_site_csv_from_zenodo(siteid::Int,
               )
 end
 
-function get_latest_zenodo_id(concept_id=ZENODO_CONCEPT_ID)
+function get_latest_zenodo_id(concept_id = ZENODO_CONCEPT_ID)
     res = HTTP.get("https://zenodo.org/api/records?q=conceptrecid:\"$(concept_id)\"")
     d = JSON.parse(String(res.body))
     hits = d["hits"]["hits"]

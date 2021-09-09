@@ -1,42 +1,45 @@
-# developed with Julia 1.3.0
-#
 # functions to split data into train and test periods for the EMSx challenge
 
 
-make_directory(path::String) = isdir(path) || mkpath(path)
-
-function gzpack(file::String)
-    if Sys.isunix()
-        run(`gzip $(file)`)
-    end
-    if Sys.iswindows()
-        run(`7z a $(file).gz $(file) -bso0 -bsp0`) # only shows errors
+function write_site_file(filename, df; compressed=true)
+    if compressed
+        open(GzipCompressorStream, "$(filename).gz", "w") do stream
+            CSV.write(stream, df)
+        end
+    else
+        CSV.write("$(filename)", df)
     end
 end
 
 function read_site_file(file::String; kw...)
-    csv = CSV.File(transcode(GzipDecompressor, Mmap.mmap(file))) |> DataFrame
-    #f = open(file)
-    #csv = CSV.read(GzipDecompressorStream(f); kw...)
-    #close(f)
-    return csv
+    return CSV.read(file, DataFrame)
+end
+
+function find_site_files(folder)
+    files = readdir(folder)
+    filter!(f -> occursin(r"^(\d+)\.csv(\.gz)?$",f), files)
+    sort!(files)
+    unique!(f -> match(r"(\d+)", f)[1], files) # since files is sorted, ".csv" will be chosen over ".csv.gz"
+    return files
 end
 
 function initialize_data(path_to_data_folder::String,
-                         path_to_test_periods_csv::String = joinpath(DIR, 
-                                                                     "metadata", 
-                                                                     "test_periods.csv");
-                         delete_files::Bool = true)
+                         path_to_test_periods_csv::String = 
+                             joinpath(DIR, "metadata", "test_periods.csv");
+                         delete_files::Bool = true,
+                         progress::Bool = true,
+                         compressed = true)
     println()
     println("Splitting train and test datasets")
-    make_directory(joinpath(path_to_data_folder, "test"))
-    make_directory(joinpath(path_to_data_folder, "train"))
-    ls = readdir(path_to_data_folder)
-    full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
+    mkpath(joinpath(path_to_data_folder, "test"))
+    mkpath(joinpath(path_to_data_folder, "train"))
+    full_site_files = find_site_files(path_to_data_folder)
+
     @showprogress for full_site_file in full_site_files
         train_test_split(full_site_file, 
                          path_to_data_folder, 
-                         path_to_test_periods_csv)
+                         path_to_test_periods_csv;
+                         compressed = compressed)
         delete_files && rm(joinpath(path_to_data_folder, full_site_file))
     end
 end
@@ -45,12 +48,12 @@ function initialize_data_parallel(path_to_data_folder::String,
                                   path_to_test_periods_csv::String = 
                                       joinpath(DIR, "metadata", "test_periods.csv");
                                   delete_files::Bool = true,
-                                  progress::Bool = true)
+                                  progress::Bool = true,
+                                  compressed = true)
     println()
-    make_directory(joinpath(path_to_data_folder, "test"))
-    make_directory(joinpath(path_to_data_folder, "train"))
-    ls = readdir(path_to_data_folder)
-    full_site_files = ls[findall(f -> !isnothing(match(r"(.*)\.csv.gz", f)), ls)]
+    mkpath(joinpath(path_to_data_folder, "test"))
+    mkpath(joinpath(path_to_data_folder, "train"))
+    full_site_files = find_site_files(path_to_data_folder)
 
     if progress
         prog = ParallelProgress(length(full_site_files); 
@@ -61,24 +64,26 @@ function initialize_data_parallel(path_to_data_folder::String,
     pmap(full_site_files) do full_site_file 
         train_test_split(full_site_file, 
                          path_to_data_folder, 
-                         path_to_test_periods_csv)
+                         path_to_test_periods_csv;
+                         compressed = compressed)
         delete_files && rm(joinpath(path_to_data_folder, full_site_file))
         progress && next!(prog)
     end
+    progress && finish!(prog)
     return
 end
 
 function train_test_split(site_file::String, 
                           path_to_data_folder::String,
-                          path_to_test_periods_csv::String)
+                          path_to_test_periods_csv::String;
+                          compressed = true)
     
     
     test_periods = CSV.read(path_to_test_periods_csv, DataFrame)
     date_format = dateformat"y-m-dTH:M:S+z"
-    site_id = parse(Int, match(r"(.*)\.csv.gz", site_file).captures[1])
+    site_id = parse(Int, match(r"(\d+)", site_file)[1])
 
-    data = read_site_file(joinpath(path_to_data_folder, site_file), 
-                          copycols = true)
+    data = read_site_file(joinpath(path_to_data_folder, site_file))
     
     data.timestamp = DateTime.(data.timestamp, date_format)
     sort!(data, :timestamp)
@@ -98,14 +103,11 @@ function train_test_split(site_file::String,
     end
 
     test_file = joinpath(path_to_data_folder, "test", "$(site_id).csv")
-    CSV.write(test_file, test_data)
-    gzpack(test_file)
+    write_site_file(test_file, test_data)
     
     train_file = joinpath(path_to_data_folder, "train", "$(site_id).csv")
     train_data = data[(!).(in(periods).(data.period_id)), :]
-    CSV.write(train_file, train_data)
-    gzpack(train_file)
+    write_site_file(train_file, train_data)
 
     return nothing
-
 end

@@ -2,7 +2,7 @@ module EMSx
 
 using ProgressMeter 
 using Distributed
-using Dates, TimeZones, CSV, DataFrames, CodecZlib, Mmap
+using Dates, TimeZones, CSV, DataFrames, CodecZlib
 using JLD
 using HTTP
 using Statistics
@@ -12,6 +12,8 @@ const DIR = dirname(@__DIR__)
 include("struct.jl")
 
 include("database_interface/download_data.jl")
+include("database_interface/download_data_schneider.jl")
+include("database_interface/download_data_zenodo.jl")
 include("database_interface/split_data.jl")
 include("database_interface/simulation_interface.jl")
 

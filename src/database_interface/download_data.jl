@@ -1,9 +1,7 @@
-# developed with Julia 1.3.0
-#
 # functions to download the data
 
 const SIZE_DIVIDER = 100_000
-const FILESIZES = CSV.read("filesizes.csv", DataFrame)
+const FILESIZES = CSV.read(joinpath(DIR,"metadata","filesizes.csv"), DataFrame)
 
 # _download is a modified MIT expat licensed code from HTTP.jl
 # https://github.com/JuliaWeb/HTTP.jl/blob/668e7e68747bb333ebde13af8d16add5b82b3b8a/src/download.jl#L92
@@ -12,6 +10,7 @@ function _download(url::AbstractString,
                    file_path::AbstractString; 
                    headers = Header[], 
                    progress = nothing, # nothing or Progress or ParallelProgress
+                   filesize = typemax(Int),
                    update_period = 1,
                    kw...)
 
@@ -28,13 +27,14 @@ function _download(url::AbstractString,
         function report_callback()
             prev_time = Dates.now()
             completion_progress = floor(Int, downloaded_bytes / SIZE_DIVIDER)
-            update!(progress, completion_progress)
+            # we stay stuck at 99% if file is bigger than expected
+            update!(progress, min(completion_progress, filesize-1))
         end
 
         Base.open(file_path, "w") do fh
-            while(!eof(stream))
+            while !eof(stream)
                 downloaded_bytes += write(fh, readavailable(stream))
-                if !isinf(update_period) &&
+                if !isinf(update_period)
                     if Dates.now() - prev_time > Dates.Millisecond(round(1000update_period))
                         report_callback()
                     end
@@ -48,10 +48,10 @@ function _download(url::AbstractString,
     return
 end
 
-# mean compression ratio: 2.543
+# (mean compression ratio for Schneider): 2.543
 function get_file_size(siteid::Integer, compressed::Bool)
     col = compressed ? ".csv.gz" : ".csv"
-    return round(Int, df[siteid, col]/SIZE_DIVIDER, RoundUp)
+    return ceil(Int, FILESIZES[siteid, col]/SIZE_DIVIDER)
 end
 
 function download_site_csv(source, siteid, path_to_data_folder; kw...)
