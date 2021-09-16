@@ -90,8 +90,8 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
 
     @testset "Evaluation" begin
         
-      average_costs = EMSx.average_cost_per_site(joinpath(test_data_save_directory, "score.jld"))
-      performance_metrics = EMSx.evaluate_model(joinpath(test_data_save_directory, "score.jld"))
+      average_costs = EMSx.average_cost_per_site(joinpath(test_data_save_directory, "score.jld2"))
+      performance_metrics = EMSx.evaluate_model(joinpath(test_data_save_directory, "score.jld2"))
 
       @test average_costs[!, :dummy][1] ≈ 7444.801871465684
       @test performance_metrics[!, :gain][1] ≈ -1940.8319533558906

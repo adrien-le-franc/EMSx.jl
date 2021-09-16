@@ -48,7 +48,6 @@ function _download(url::AbstractString,
     return
 end
 
-# (mean compression ratio for Schneider): 2.543
 function get_file_size(siteid::Integer, compressed::Bool)
     col = compressed ? ".csv.gz" : ".csv"
     return ceil(Int, FILESIZES[siteid, col]/SIZE_DIVIDER)

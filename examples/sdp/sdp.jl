@@ -10,7 +10,7 @@
 using EMSx
 using StoOpt
 
-using JLD
+using JLD2
 
 include("../arguments.jl")
 include("function.jl")
@@ -81,7 +81,7 @@ function load_value_functions(site_id::String)
     return load(joinpath(args["save"],
                 "sdp", 
                 "value_functions", 
-                site_id*".jld"))["value_function"]
+                site_id*".jld2"))["value_function"]
 end
 
 function EMSx.compute_control(controller::Sdp, information::EMSx.Information)
