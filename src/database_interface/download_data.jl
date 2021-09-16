@@ -58,12 +58,12 @@ function _download(url::AbstractString,
 end
 
 function get_file_size(sitesid::AbstractVector{<:Integer})
-    sizes_jld_file = joinpath(DIR, "metadata", "site_file_sizes.jld")
+    sizes_jld_file = joinpath(DIR, "metadata", "site_file_sizes.jld2")
     round.(Int, getindex.([load(sizes_jld_file)], string.(sitesid) .* ".csv.gz") ./ SIZE_DIVIDER, RoundUp)
 end
 
 function get_file_size(siteid::Integer)
-    sizes_jld_file = joinpath(DIR, "metadata", "site_file_sizes.jld")
+    sizes_jld_file = joinpath(DIR, "metadata", "site_file_sizes.jld2")
     round(Int, load(sizes_jld_file)["$(siteid).csv.gz"]/SIZE_DIVIDER, RoundUp)
 end
 
