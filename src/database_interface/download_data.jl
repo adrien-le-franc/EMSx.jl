@@ -8,7 +8,7 @@ const FILESIZES = CSV.read(joinpath(DIR,"metadata","filesizes.csv"), DataFrame)
 
 function _download(url::AbstractString, 
                    file_path::AbstractString; 
-                   headers = Header[], 
+                   headers = [], 
                    progress = nothing, # nothing or Progress or ParallelProgress
                    filesize = typemax(Int),
                    update_period = 1,
@@ -99,6 +99,7 @@ function download_sites_data_parallel(path_to_data_folder,
             download_site_csv(source, sitesid[idx], path_to_data_folder; 
                               progress = progress ? mprog[idx] : false, 
                               compressed = compressed,
+                              file_size = file_sizes[idx],
                               kw...)
         end
     end

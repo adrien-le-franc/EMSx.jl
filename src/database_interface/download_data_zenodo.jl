@@ -7,6 +7,7 @@ const ZENODO_CONCEPT_ID = "5510399"
 function download_site_csv_from_zenodo(siteid::Int, 
                            path_to_data_folder::String;
                            compressed::Bool = true,
+                           file_size = nothing,
                            periods::Union{Nothing, AbstractArray{Int}} = nothing,
                            progress = true, # true/false or Progress or ParallelProgress
                            api_key = get(ENV, "ZENODO_API_KEY", nothing),

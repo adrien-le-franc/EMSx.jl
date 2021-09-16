@@ -7,6 +7,7 @@ const DATASET = "dataset/microgrid-energy-management-benchmark-time-series"
 function download_site_csv_from_schneider(siteid::Int, 
                            path_to_data_folder::String; 
                            compressed::Bool = true,
+                           file_size = nothing,
                            periods::Union{Nothing, AbstractArray{Int}} = nothing,
                            progress = true, # true/false or Progress or ParallelProgress
                            api_key = get(ENV, "SCHNEIDER_API_KEY", nothing))
