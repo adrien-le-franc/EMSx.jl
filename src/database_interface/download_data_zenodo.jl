@@ -1,10 +1,8 @@
 # functions to download the data from Schneider's database 
 
-#! TODO: use correct ids when available
-@info "Incorrect Zenodo ID, please fix"
 const ZENODO_API = "https://zenodo.org/record/"
-const ZENODO_ID = "5458943"
-const ZENODO_CONCEPT_ID = "3723281"
+const ZENODO_ID = "5510400"
+const ZENODO_CONCEPT_ID = "5510399"
 
 function download_site_csv_from_zenodo(siteid::Int, 
                            path_to_data_folder::String;
@@ -15,26 +13,26 @@ function download_site_csv_from_zenodo(siteid::Int,
                            zenodo_id = ZENODO_ID)
 
     if progress == true
-        file_size = get_file_size(siteid, compressed)
+        file_size = get_file_size(siteid, true)
         progress = Progress(file_size; desc = "Downloading $siteid.csv.gz ")
     elseif progress == false
         file_size = nothing
         progress = nothing
     end
 
-    headers = Dict("Accept-Encoding" => compressed ? "gzip" : "identity")
+    headers = Dict("Accept-Encoding" => "gzip")
 
     if !isnothing(api_key)
         headers["Authorization"] = "Bearer "*api_key
     end
 
-    url = ZENODO_API*zenodo_id*"/files/$(siteid).csv?download=1"
+    url = ZENODO_API*zenodo_id*"/files/$(siteid).csv.gz?download=1"
 
     if !isnothing(periods)
         @info "`periods` not supported for Zenodo, full data will be downloaded"
     end
     
-    file_extension = compressed ? ".csv.gz" : ".csv"
+    file_extension = ".csv.gz"
     _download(url, 
               joinpath(path_to_data_folder, "$(siteid)"*file_extension); 
               headers=headers, 
