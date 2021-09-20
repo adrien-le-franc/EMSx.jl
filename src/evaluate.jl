@@ -5,8 +5,8 @@
 
 
 function average_cost_per_site(result_model::String, 
-	result_dummy::String=joinpath(DIR, "metadata", "baseline", "dummy.jld"), 
-	result_anticipative::String=joinpath(DIR, "metadata", "baseline", "anticipative.jld"))
+	result_dummy::String=joinpath(DIR, "metadata", "baseline", "dummy.jld2"), 
+	result_anticipative::String=joinpath(DIR, "metadata", "baseline", "anticipative.jld2"))
     
     model = load(result_model)
     dummy = load(result_dummy)
@@ -51,8 +51,8 @@ function average_cost_per_site(result_model::String,
 end
 
 function evaluate_model(result_model::String,
-	result_dummy::String=joinpath(DIR, "metadata", "baseline", "dummy.jld"), 
-	result_anticipative::String=joinpath(DIR, "metadata", "baseline", "anticipative.jld"))
+	result_dummy::String=joinpath(DIR, "metadata", "baseline", "dummy.jld2"), 
+	result_anticipative::String=joinpath(DIR, "metadata", "baseline", "anticipative.jld2"))
     
     average_costs = average_cost_per_site(result_model, result_dummy, result_anticipative)
     

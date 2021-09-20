@@ -10,7 +10,7 @@ function simulate_sites(controller::AbstractController,
                         path_to_test_data_folder::String,
                         path_to_train_data_folder::Union{String, Nothing}=nothing)
     
-    make_directory(path_to_save_folder)
+    mkpath(path_to_save_folder)
     prices = load_prices(path_to_price_csv_file)
     sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, 
         path_to_train_data_folder, path_to_save_folder)
@@ -37,7 +37,7 @@ function simulate_sites_parallel(controller::EMSx.AbstractController,
                                  path_to_test_data_folder::String,
                                  path_to_train_data_folder::Union{String, Nothing}=nothing)
 
-    make_directory(path_to_save_folder)
+    mkpath(path_to_save_folder)
     prices = load_prices(path_to_price_folder)
     sites = load_sites(path_to_metadata_csv_file, path_to_test_data_folder, 
         path_to_train_data_folder, path_to_save_folder)

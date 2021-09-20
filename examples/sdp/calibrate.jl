@@ -5,7 +5,7 @@
 
 using EMSx
 
-using JLD
+using JLD2
 using ProgressMeter
 
 
@@ -42,7 +42,7 @@ function calibrate_site(controller::EMSx.AbstractController, site::EMSx.Site,
 
     timer = @elapsed value_function = compute_value_functions(controller)
     
-    save(joinpath(site.path_to_save_folder, "value_functions", site.id*".jld"), 
+    JLD2.save(joinpath(site.path_to_save_folder, "value_functions", site.id*".jld2"), 
         Dict("value_function"=>value_function, "time"=>timer))
 
     return nothing

@@ -3,3 +3,4 @@
 /data/*
 /results/*
 Manifest.toml
+/test/data

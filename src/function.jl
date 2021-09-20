@@ -23,7 +23,7 @@ function compute_stage_dynamics(battery::Battery, state::Float64, control::Float
 end
 
 function save_simulations(site::Site, simulations::Array{Simulation})
-    path_to_score = joinpath(site.path_to_save_folder, site.id*".jld")
+    path_to_score = joinpath(site.path_to_save_folder, site.id*".jld2")
     save(path_to_score, "simulations", simulations)
 end
 
@@ -33,17 +33,17 @@ function group_all_simulations(sites::Array{Site})
 
     for site in sites
 
-        path_to_score = joinpath(site.path_to_save_folder, site.id*".jld")
+        path_to_score = joinpath(site.path_to_save_folder, site.id*".jld2")
         simulation = load(path_to_score, "simulations")
         scores[site.id] = simulation
 
     end
 
-    save(joinpath(sites[1].path_to_save_folder, "score.jld"), scores)
+    save(joinpath(sites[1].path_to_save_folder, "score.jld2"), scores)
 
-    if isfile(joinpath(sites[1].path_to_save_folder, "score.jld"))
+    if isfile(joinpath(sites[1].path_to_save_folder, "score.jld2"))
         for site in sites
-            rm(joinpath(site.path_to_save_folder, site.id*".jld"))
+            rm(joinpath(site.path_to_save_folder, site.id*".jld2"))
         end
     end
 

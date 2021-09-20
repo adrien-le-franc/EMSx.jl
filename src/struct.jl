@@ -53,12 +53,12 @@ function Site(data::DataFrame, row::Int64, path_to_test_data_folder::Union{Strin
 
     id = string(data[row, :site_id])
     battery = Battery([float(x) for x in data[row, 3:end]]...)
-    if path_to_test_data_folder != nothing
+    if path_to_test_data_folder !== nothing
         path_to_test_data_csv = joinpath(path_to_test_data_folder, id*".csv.gz")
     else
         path_to_test_data_csv = nothing
     end
-    if path_to_train_data_folder != nothing
+    if path_to_train_data_folder !== nothing
         path_to_train_data_csv = joinpath(path_to_train_data_folder, id*".csv.gz")
     else
         path_to_train_data_csv = nothing
@@ -100,11 +100,10 @@ function Information(t::Int64, prices::Prices, period::Period, soc::Float64)
 
     data = sort!(period.data[t+1:t+96, :], rev=true)
     pv = data[!, :actual_pv]
-    forecast_pv = data[end, 102:197]
+    forecast_pv = Vector{Float64}(data[end, 102:197])
     load = data[!, :actual_consumption]
-    forecast_load = data[end, 6:101]
+    forecast_load = Vector{Float64}(data[end, 6:101])
 
     return Information(t, soc, pv, forecast_pv, load, forecast_load, prices, period.site.battery, 
         period.site.id)
-
 end

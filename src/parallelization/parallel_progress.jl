@@ -1,6 +1,7 @@
 # developed with Julia 1.1.1
 #
 # functions for displaying progress in parallel computing 
+# can be replaced with default progressmeter when https://github.com/timholy/ProgressMeter.jl/pull/157 is merged
 
 import ProgressMeter: next!, finish!, cancel, update!
 import Distributed: RemoteChannel, put!
@@ -56,8 +57,8 @@ end
 Base.getindex(mp::MultipleProgress, n::Integer) = ParallelProgress(MultipleChannel(mp.channel, n), mp.lengths[n])
 finish!(mp::MultipleProgress) = put!.([mp.channel], [(p, PP_FINISH) for p in 1:mp.amount])
 
-function MultipleProgress(amount::Integer, lengths::T; kw...) where T <: Integer
-    MultipleProgress(amount, lengths*ones(T,amount); kw...)
+function MultipleProgress(amount::Integer, lengths::Integer; kw...)
+    MultipleProgress(amount, fill(lengths, amount); kw...)
 end
 
 function MultipleProgress(amount::Integer, 
