@@ -17,21 +17,26 @@ If not installed, download [Julia 1.3.0](https://julialang.org/downloads/) or hi
 Then, add the `EMSx.jl` package using Julia's [package manager](https://julialang.github.io/Pkg.jl/v1/managing-packages/). Note that `EMSx.jl` is not a registered package.
 
 ## Data
-The microgrid control simulation relies on [data](https://shop.exchange.se.com/apps/52535/microgrid-energy-management-benchmark#!overview) provided by Schneider Electric. 
+The microgrid control simulation relies on [data](https://shop.exchange.se.com/apps/52535/microgrid-energy-management-benchmark) provided by Schneider Electric.
+Besides data per site and metadata to run the benchmark, we also provide a file `pv.csv` reporting the historical photovoltaic production and forecasts employed for all sites, with values scaled in [0,1].  
 
-`EMSx.jl` provides functions for downloading the dataset:
+### Download
+`EMSx.jl` provides functions for downloading the dataset: just call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites. Note that you can specify site ids, e.g. `EMSx.download_sites_data(path_to_data_folder, 1:5)` to download sites with ids from 1 to 5.
+
+The default behavior is to download data from Zenodo. Alternatively, you can download data from Schneider's platform as follows:
 
 1. make an account and login to Schneider's [platform](https://data.exchange.se.com)
 2. generate an API key from your [account](https://data.exchange.se.com/account/api-keys/)
 3. set an environment variable with your API key: `SCHNEIDER_API_KEY = XXX` 
-4. just call `EMSx.download_sites_data(path_to_data_folder, 1:70)` to download all 70 sites
+4. just call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites
 
 Note that the data is compressed to .gz file and that downloading the total amount of data requires about 5GB of disk space.
 
-5. finally, perform the train/test data partitioning by running `EMSx.initialize_data(path_to_data_folder)`. By default, pre-partitioning data files are deleted to save disk space. You can choose to keep them with the keyword `delete_files=false`.
-Note for windows users: you need to install [7-Zip](https://www.7-zip.org/download.html) and [add its folder to the path](https://docs.telerik.com/teststudio/features/test-runners/add-path-environment-variables) (default is `C:\Program Files\7-Zip\`)
+### Data partitioning
+If you wish to use the data to run the benchmark, you need to perform the train/test data partitioning by running `EMSx.initialize_data(path_to_data_folder)`. By default, pre-partitioning data files are deleted to save disk space. You can choose to keep them with the keyword `delete_files=false`.
 
-Due to the large volume of data, steps 4. and 5. can be time consuming. We provide [parallelization options](#parallelization) for these steps.
+### Note
+Due to the large volume of data, downloading and data partitioning can be time consuming. We provide [parallelization options](#parallelization) for these steps. Aslo, we report that downloading data from Zenodo can be significantly faster (about 12 minutes with a WIFI connexion of 80 Mbps)
 
 ## Using EMSx.jl
 `EMSx.jl` is a package for simulating the control of an electric microgrid on testing periods of one week. We have a pool of 70 microgrids with data. Each microgrid is composed with 
@@ -82,9 +87,9 @@ The performance of a controller on the EMSx benchmark is measured relatively to 
 * a dummy controller, which does not use the battery 
 * an anticipative controller, which has full knowledge of the future energy net demand 
 
-Such baseline controllers allow us to compute performance metrics based on the `score.jld` file saved after running a simulation:
+Such baseline controllers allow us to compute performance metrics based on the `score.jld2` file saved after running a simulation:
 ```julia
-julia> performance_metrics = EMSx.evaluate_model("/home/xxx/model/score.jld")
+julia> performance_metrics = EMSx.evaluate_model("/home/xxx/model/score.jld2")
 3×4 DataFrame
 │ Row │ site   │ cost    │ gain    │ score    │
 │     │ String │ Float64 │ Float64 │ Float64  │
