@@ -21,7 +21,8 @@ The microgrid control simulation relies on [data](https://shop.exchange.se.com/a
 Besides data per site and metadata to run the benchmark, we also provide a file `pv.csv` reporting the historical photovoltaic production and forecasts employed for all sites, with values scaled in [0,1].  
 
 ### Download
-`EMSx.jl` provides functions for downloading the dataset: just call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites. Note that you can specify site ids, e.g. `EMSx.download_sites_data(path_to_data_folder, 1:5)` to download sites with ids from 1 to 5.
+`EMSx.jl` provides functions for downloading the dataset: call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites, and call
+`EMSx.download_pv(path_to_data_folder)` to download the file `pv.csv`. Note that you can specify site ids, e.g. `EMSx.download_sites_data(path_to_data_folder, 1:5)` to download sites with ids from 1 to 5.
 
 The default behavior is to download data from [Zenodo](https://zenodo.org/record/5510400#.YUizGls69hE). Alternatively, you can download data from Schneider's platform as follows:
 
@@ -30,7 +31,7 @@ The default behavior is to download data from [Zenodo](https://zenodo.org/record
 3. set an environment variable with your API key: `SCHNEIDER_API_KEY = XXX` 
 4. just call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites
 
-Note that the data is compressed to .gz file and that downloading the total amount of data requires about 5GB of disk space.
+Note that the data is compressed to .gz file and that downloading the total amount of data requires about 6GB of disk space.
 
 ### Data partitioning
 If you wish to use the data to run the benchmark, you need to perform the train/test data partitioning by running `EMSx.initialize_data(path_to_data_folder)`. By default, pre-partitioning data files are deleted to save disk space. You can choose to keep them with the keyword `delete_files=false`.
