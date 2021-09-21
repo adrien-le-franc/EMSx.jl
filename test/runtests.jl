@@ -32,30 +32,34 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
 
     @testset "Testing downloading data from Schneider" begin
 
-        @test haskey(ENV, "SCHNEIDER_API_KEY")
+        if haskey(ENV, "SCHNEIDER_API_KEY")
 
-        @test isnothing(EMSx.download_sites_data(test_data_directory, 
-                                                  69:69; 
-                                                  periods = [1,2], 
-                                                  progress = false,
-                                                  source = :schneider,
-                                                  compressed = true))
-        @test isfile(joinpath(test_data_directory, "69.csv.gz"))
+            @test isnothing(EMSx.download_sites_data(test_data_directory, 
+                                                      69:69; 
+                                                      periods = [1,2], 
+                                                      progress = false,
+                                                      source = :schneider,
+                                                      compressed = true))
+            @test isfile(joinpath(test_data_directory, "69.csv.gz"))
 
-        @test isnothing(EMSx.initialize_data(test_data_directory, 
-                                              test_periods_path,
-                                              delete_files=false,
-                                              compressed=true))
-        @test isfile(joinpath(test_data_directory, "69.csv.gz"))
-        @test isfile(joinpath(test_data_test_directory, "69.csv.gz"))
-        @test isfile(joinpath(test_data_train_directory, "69.csv.gz"))
-        @test isnothing(EMSx.initialize_data(test_data_directory, 
-                                              test_periods_path,
-                                              delete_files=true,
-                                              compressed=false))
-        @test !isfile(joinpath(test_data_directory, "69.csv.gz"))
-        @test isfile(joinpath(test_data_test_directory, "69.csv"))
-        @test isfile(joinpath(test_data_train_directory, "69.csv"))
+            @test isnothing(EMSx.initialize_data(test_data_directory, 
+                                                  test_periods_path,
+                                                  delete_files=false,
+                                                  compressed=true))
+            @test isfile(joinpath(test_data_directory, "69.csv.gz"))
+            @test isfile(joinpath(test_data_test_directory, "69.csv.gz"))
+            @test isfile(joinpath(test_data_train_directory, "69.csv.gz"))
+            @test isnothing(EMSx.initialize_data(test_data_directory, 
+                                                  test_periods_path,
+                                                  delete_files=true,
+                                                  compressed=false))
+            @test !isfile(joinpath(test_data_directory, "69.csv.gz"))
+            @test isfile(joinpath(test_data_test_directory, "69.csv"))
+            @test isfile(joinpath(test_data_train_directory, "69.csv"))
+
+        else
+            @warn "SCHNEIDER_API_KEY missing, Schneider download functions not tested"
+        end
 
     end
 
@@ -67,6 +71,12 @@ const test_periods_path = joinpath(test_metadata_directory, "test_periods.csv")
                                                     source = :zenodo,
                                                     compressed = true))
         @test isfile(joinpath(test_data_directory, "8.csv.gz"))
+
+        # download pv
+        
+        @test isnothing(EMSx.download_pv(test_data_directory))
+        @test isfile(joinpath(test_data_directory, "pv.csv.gz"))
+        rm(joinpath(test_data_directory, "pv.csv.gz"))
 
         # non-compressed download from zenodo not available
 

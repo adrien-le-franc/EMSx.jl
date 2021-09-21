@@ -1,6 +1,5 @@
 # functions to download the data
 
-const SIZE_DIVIDER = 100_000
 const FILESIZES = CSV.read(joinpath(DIR,"metadata","filesizes.csv"), DataFrame)
 
 # _download is a modified MIT expat licensed code from HTTP.jl
@@ -26,7 +25,7 @@ function _download(url::AbstractString,
 
         function report_callback()
             prev_time = Dates.now()
-            completion_progress = floor(Int, downloaded_bytes / SIZE_DIVIDER)
+            completion_progress = downloaded_bytes
             # we stay stuck at 99% if file is bigger than expected
             update!(progress, min(completion_progress, filesize-1))
         end
@@ -50,7 +49,7 @@ end
 
 function get_file_size(siteid::Integer, compressed::Bool)
     col = compressed ? ".csv.gz" : ".csv"
-    return ceil(Int, FILESIZES[siteid, col]/SIZE_DIVIDER)
+    return ceil(Int, FILESIZES[siteid, col])
 end
 
 function download_site_csv(source, siteid, path_to_data_folder; kw...)
@@ -70,6 +69,11 @@ function download_sites_data(path_to_data_folder,
     for siteid in sitesid
         download_site_csv(source, siteid, path_to_data_folder; kw...)
     end
+    return
+end
+
+function download_pv(path_to_data_folder; kw...)
+    download_pv_csv_from_zenodo(path_to_data_folder; kw...)
     return
 end
 

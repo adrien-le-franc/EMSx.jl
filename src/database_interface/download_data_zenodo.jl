@@ -30,12 +30,42 @@ function download_site_csv_from_zenodo(siteid::Int,
     url = ZENODO_API*zenodo_id*"/files/$(siteid).csv.gz?download=1"
 
     if !isnothing(periods)
-        @info "`periods` not supported for Zenodo, full data will be downloaded"
+        @info "`periods` not supported for Zenodo, full site data will be downloaded"
     end
     
     file_extension = ".csv.gz"
     _download(url, 
               joinpath(path_to_data_folder, "$(siteid)"*file_extension); 
+              headers=headers, 
+              file_size=file_size, 
+              progress=progress, 
+              )
+end
+
+function download_pv_csv_from_zenodo(path_to_data_folder::String;
+                        progress = true, # true/false or Progress or ParallelProgress
+                        api_key = get(ENV, "ZENODO_API_KEY", nothing),
+                        zenodo_id = ZENODO_ID)
+
+    if progress == true
+        file_size = 50_116_148
+        progress = Progress(file_size; desc = "Downloading pv.csv.gz ")
+    elseif progress == false
+        file_size = nothing
+        progress = nothing
+    end
+
+    headers = Dict("Accept-Encoding" => "gzip")
+
+    if !isnothing(api_key)
+        headers["Authorization"] = "Bearer "*api_key
+    end
+
+    url = ZENODO_API*zenodo_id*"/files/pv.csv.gz?download=1"
+    
+    file_extension = ".csv.gz"
+    _download(url, 
+              joinpath(path_to_data_folder, "pv"*file_extension); 
               headers=headers, 
               file_size=file_size, 
               progress=progress, 
