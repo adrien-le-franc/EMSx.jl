@@ -23,7 +23,7 @@ Besides data per site and metadata to run the benchmark, we also provide a file 
 ### Download
 `EMSx.jl` provides functions for downloading the dataset: just call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites. Note that you can specify site ids, e.g. `EMSx.download_sites_data(path_to_data_folder, 1:5)` to download sites with ids from 1 to 5.
 
-The default behavior is to download data from Zenodo. Alternatively, you can download data from Schneider's platform as follows:
+The default behavior is to download data from [Zenodo](https://zenodo.org/record/5510400#.YUizGls69hE). Alternatively, you can download data from Schneider's platform as follows:
 
 1. make an account and login to Schneider's [platform](https://data.exchange.se.com)
 2. generate an API key from your [account](https://data.exchange.se.com/account/api-keys/)
