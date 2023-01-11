@@ -17,14 +17,16 @@ If not installed, download [Julia 1.3.0](https://julialang.org/downloads/) or hi
 Then, add the `EMSx.jl` package using Julia's [package manager](https://julialang.github.io/Pkg.jl/v1/managing-packages/). Note that `EMSx.jl` is not a registered package.
 
 ## Data
-The microgrid control simulation relies on [data](https://shop.exchange.se.com/apps/52535/microgrid-energy-management-benchmark) provided by Schneider Electric.
+The microgrid control simulation relies on [data](https://zenodo.org/record/5510400#.YUizGls69hE) provided by Schneider Electric.
 Besides data per site and metadata to run the benchmark, we also provide a file `pv.csv` reporting the historical photovoltaic production and forecasts employed for all sites, with values scaled in [0,1].  
 
 ### Download
+The simplest way to get the data is to download them from [Zenodo](https://zenodo.org/record/5510400#.YUizGls69hE).
+If you prefer command lines,
 `EMSx.jl` provides functions for downloading the dataset: call `EMSx.download_sites_data(path_to_data_folder)` to download the data for all sites, and call
 `EMSx.download_pv(path_to_data_folder)` to download the file `pv.csv`. Note that you can specify site ids, e.g. `EMSx.download_sites_data(path_to_data_folder, 1:5)` to download sites with ids from 1 to 5.
 
-The default behavior is to download data from [Zenodo](https://zenodo.org/record/5510400#.YUizGls69hE). Alternatively, you can download data from Schneider's platform as follows:
+Alternatively, you can download data from Schneider's [platform](https://shop.exchange.se.com/apps/52535/microgrid-energy-management-benchmark) as follows:
 
 1. make an account and login to Schneider's [platform](https://data.exchange.se.com)
 2. generate an API key from your [account](https://data.exchange.se.com/account/api-keys/)
